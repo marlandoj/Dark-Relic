@@ -1,0 +1,11 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "0.1.0-candidate",
+  "FriendlyName": "Dark Relic Core",
+  "Description": "Blueprint-accessible solo extraction rules. Windows compilation and packaged verification required.",
+  "Category": "Gameplay",
+  "CanContainContent": false,
+  "EnabledByDefault": false,
+  "Modules": [{"Name": "DarkRelicCore", "Type": "Runtime", "LoadingPhase": "Default"}]
+}
