@@ -1,0 +1,7 @@
+Binaries/
+Intermediate/
+Saved/
+.vs/
+build/
+__pycache__/
+*.zip
