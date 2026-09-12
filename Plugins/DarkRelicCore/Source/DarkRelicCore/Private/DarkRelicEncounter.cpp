@@ -108,7 +108,7 @@ void ADarkRelicEncounter::EndPlay(const EEndPlayReason::Type Reason)
 {
     for (auto& Sound : ActiveSounds) if (IsValid(Sound.Component)) { Sound.Component->Stop(); Sound.Component->DestroyComponent(); }
     ActiveSounds.Empty();
-    if (Player) if (auto* Camera=Player->FindComponentByClass<UCameraComponent>()) Camera->ClearAdditiveOffset();
+    if (IsValid(Player)) if (auto* Camera=Player->FindComponentByClass<UCameraComponent>()) Camera->ClearAdditiveOffset();
     Super::EndPlay(Reason);
 }
 
@@ -593,6 +593,7 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
     {
         SmokeCheck(TEXT("enemy telegraph resolves into real damage"),S.Health==S.MaxHealth-14);
         Enemies[1].Cooldown=100; Enemies[1].Windup=0;
+        Enemies[1].Actor->TeleportTo(Enemies[1].Home,FRotator::ZeroRotator,false,true);
         Player->TeleportTo(FVector(-100,700,120),FRotator::ZeroRotator,false,true); Interact();
         SmokeCheck(TEXT("elite prevents early relic pickup"),Run->GetSnapshot().Carried[3]==0);
         auto& Boss=Enemies[2]; Boss.Health=74; Boss.Cooldown=0; Boss.Windup=0; Boss.BellAttack.cooldown=0;
