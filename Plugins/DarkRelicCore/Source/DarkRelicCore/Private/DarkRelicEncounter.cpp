@@ -1361,8 +1361,10 @@ void ADarkRelicHUD::DrawHUD()
         if (Game->MessageRemaining>0) Label(Game->Message,40,Canvas->ClipY/Scale-80,0.85f,Text);
         return;
     }
-    DrawRect(Ink,24*Scale,66*Scale,535*Scale,305*Scale);
-    DrawRect(Ink,Canvas->ClipX-380*Scale,66*Scale,356*Scale,205*Scale);
+    DrawRect(Ink,24*Scale,66*Scale,340*Scale,138*Scale);
+    DrawRect(Ink,24*Scale,210*Scale,535*Scale,73*Scale);
+    if (S.InZone) DrawRect(Ink,24*Scale,293*Scale,535*Scale,78*Scale);
+    DrawRect(Ink,Canvas->ClipX-380*Scale,66*Scale,356*Scale,(S.ComboStep>0 ? 205 : 148)*Scale);
     Label(TEXT("Health"),40,76,0.9f,Text); Bar(40,100,260,16,S.Health/S.MaxHealth,Red);
     Label(TEXT("Stamina"),40,123,0.9f,Text); Bar(40,147,260,12,S.Stamina/S.MaxStamina,Green);
     Label(FString::Printf(TEXT("Heals %d   |   Bank %d   |   Resolve %d/1"),S.Heals,S.Credits,S.Upgrade),40,176,0.8f,Text);
