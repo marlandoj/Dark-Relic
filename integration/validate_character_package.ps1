@@ -1,3 +1,4 @@
+param([switch]$ProfileOnly)
 $ErrorActionPreference='Stop'
 $ProgressPreference='SilentlyContinue'
 $Root='H:\DarkRelicCharacterPackage\Windows\DarkRelicSmoke'
@@ -6,9 +7,15 @@ $Receipt="$Evidence\character-stability.json"
 $Build=Get-Content "$Evidence\character-build.json" -Raw | ConvertFrom-Json
 if(!$Build.complete -or $Build.phase -ne 'passed') { throw 'Character package is not verified yet' }
 $State=@{complete=$false;passed=$false;phase='relaunch';runs=@();started=[DateTime]::UtcNow.ToString('o')}
+if($ProfileOnly) {
+    $Previous=Get-Content $Receipt -Raw | ConvertFrom-Json
+    if(!$Previous.complete -or $Previous.runs.Count -ne 4 -or @($Previous.runs | Where-Object {!$_.passed -or $_.exitCode -ne 0 -or $_.checks -lt 27}).Count) { throw 'Profile-only retry requires four verified relaunches' }
+    $State.runs=@($Previous.runs)
+    Copy-Item $Receipt "$Evidence\character-stability-$([DateTime]::UtcNow.ToString('yyyyMMddTHHmmss')).json"
+}
 $State | ConvertTo-Json -Depth 5 | Set-Content $Receipt
 try {
-    for($Index=2;$Index -le 5;$Index++) {
+    for($Index=2;$Index -le 5 -and !$ProfileOnly;$Index++) {
         $RunStarted=[DateTime]::Now
         $p=Start-Process "$Root\Binaries\Win64\DarkRelicSmoke.exe" -ArgumentList @('-DarkRelicSmoke','-unattended','-dx11','-windowed','-ResX=1920','-ResY=1080',"-abslog=$Evidence\character-relaunch-$Index.log") -PassThru
         $State.childPid=$p.Id; $State | ConvertTo-Json -Depth 5 | Set-Content $Receipt
@@ -33,7 +40,11 @@ try {
     }
     $p.Refresh()
     if(!$p.HasExited) {
-        if(!$p.CloseMainWindow()) { throw 'Profiling game did not accept normal window close' }
+        $Shell=New-Object -ComObject WScript.Shell
+        if(!$Shell.AppActivate($p.Id)) { throw 'Could not focus the profiling game for its Escape control' }
+        Start-Sleep -Milliseconds 300
+        $Shell.SendKeys('{ESC}')
+        $State.closeMethod='Escape game control'
         if(!$p.WaitForExit(20000)) { throw 'Profiling game did not exit within 20 seconds' }
     }
     $State.profileExit=$p.ExitCode

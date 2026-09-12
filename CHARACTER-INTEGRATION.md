@@ -16,4 +16,6 @@ The `integration` scripts operate on this prepared project and its installed pac
 
 `run_character_build.ps1 -Package` compiles, validates and saves bindings, runs 27 actual-world checks, captures a frame, then cooks and tests the standalone build. `validate_character_package.ps1` adds four packaged relaunches and a short stationary-player performance sample after the first packaged run. Neither script establishes human play/feel approval, traversal performance or final art approval.
 
+Current verification: five packaged smoke runs passed 27 checks each, exit 0. A separate 20-second normal session exited 0 through the game's Escape control. CSV profiling completed its frame capture but returned exit 777003 during shutdown through both window-close and Escape; performance acceptance remains failed. The script preserves the failed receipt when `-ProfileOnly` retries profiling without repeating the four already verified relaunches. Do not report this diagnostic as resolved or declare full visual readiness Green.
+
 The public source contains no marketplace binaries or generated media. Keep Fab acquisition receipts and the existing asset ledger with the private Unreal project. Do not upload the character assets to image or 3D generation services.
