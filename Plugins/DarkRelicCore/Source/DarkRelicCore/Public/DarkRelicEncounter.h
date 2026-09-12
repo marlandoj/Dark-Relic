@@ -85,6 +85,10 @@ public:
     float AttackRemaining = 0;
     float AttackDamage = 0;
     bool AttackHeavy = false;
+    bool AttackBurst = false;
+    bool AttackFinisher = false;
+    float BurstVisualRemaining = 0;
+    FVector BurstCenter = FVector::ZeroVector;
     bool Smoke = false;
     bool SmokeFailed = false;
     bool Capture = false;
@@ -108,12 +112,15 @@ public:
     int32 BellCount = 0;
     int32 AreaAttackCount = 0;
     float SmokeAreaHealth = 0;
+    float SmokeAbilityHealth = 0;
     void PlayCue(float Frequency, float Duration, float Gain, int32 Texture = 0, const FVector* Position = nullptr);
     void FeedbackTick(float DeltaSeconds);
     void Impact(const FVector& Position, bool Heavy);
     UFUNCTION() void EndRun(bool Escaped);
     void Restart();
     void Attack(bool Heavy);
+    void RelicBurst();
+    void Rally();
     void Interact();
     void Heal();
     void Dodge();

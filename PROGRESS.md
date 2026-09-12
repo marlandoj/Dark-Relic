@@ -1,7 +1,19 @@
 # Dark Relic factory source lane
 
 status: in_progress
-watchdog: paused
+watchdog: active
+
+## Active Warden abilities (ZOU-1642)
+
+- [x] Implement Sunder combo, F Relic Burst, R Warden Fury in shared rules and live encounter
+- [x] Add readable HUD states and reuse existing animations/audio
+- [x] Pass 146 portable gameplay checks
+- [ ] Compile and run 47 expected Unreal/packaged checks in separate candidate
+- [ ] Inspect rendered abilities and verify candidate delivery
+
+Primary chat owns the authorized desktop integration. Source baseline dfbb3f8; managed worktree dark-relic-warden; Windows project H:\DarkRelicWarden-20260912 and package H:\DarkRelicWardenPackage. No previous release is replaced. Details: WARDEN-ABILITIES.md.
+
+Prior enhanced release receipt recovered: passed, Escape exit 0, protected original hashes unchanged, separate enhanced shortcut verified. The old desktop-access blocker below is historical.
 
 ## Final-day enhancement candidate (ZOU-1634)
 

@@ -17,6 +17,20 @@ bool UDarkRelicRunComponent::ApplyTuning()
     T.heal_seconds = Tuning.HealSeconds; T.heal_amount = Tuning.HealAmount;
     T.heal_charges = Tuning.HealCharges;
     T.extraction_seconds = Tuning.ExtractionSeconds;
+    T.combo_window = Tuning.ComboWindow;
+    T.finisher_damage = Tuning.FinisherDamage;
+    T.finisher_cost = Tuning.FinisherCost;
+    T.finisher_seconds = Tuning.FinisherSeconds;
+    T.burst_damage = Tuning.BurstDamage;
+    T.burst_cost = Tuning.BurstCost;
+    T.burst_seconds = Tuning.BurstSeconds;
+    T.burst_cooldown = Tuning.BurstCooldown;
+    T.rally_cost = Tuning.RallyCost;
+    T.rally_seconds = Tuning.RallySeconds;
+    T.rally_duration = Tuning.RallyDuration;
+    T.rally_cooldown = Tuning.RallyCooldown;
+    T.rally_damage_multiplier = Tuning.RallyDamageMultiplier;
+    T.rally_damage_taken = Tuning.RallyDamageTaken;
     const bool Ok = Rules.configure(T);
     if (Ok) OnStateChanged.Broadcast(GetSnapshot());
     return Ok;
@@ -118,6 +132,13 @@ FDarkRelicSnapshot UDarkRelicRunComponent::GetSnapshot() const
 {
     const auto& S = Rules.snapshot();
     FDarkRelicSnapshot Result;
+    Result.ComboStep = static_cast<int32>(S.combo_step);
+    Result.Finisher = static_cast<bool>(S.finisher);
+    Result.ComboRemaining = static_cast<float>(S.combo_remaining);
+    Result.AttackDamage = static_cast<float>(S.attack_damage);
+    Result.BurstCooldown = static_cast<float>(S.burst_cooldown);
+    Result.RallyCooldown = static_cast<float>(S.rally_cooldown);
+    Result.RallyRemaining = static_cast<float>(S.rally_remaining);
     Result.Phase = static_cast<EDarkRelicPhase>(S.phase);
     Result.Action = static_cast<EDarkRelicAction>(S.action);
     Result.Health = static_cast<float>(S.health); Result.MaxHealth = static_cast<float>(S.max_health);

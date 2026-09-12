@@ -7,7 +7,7 @@
 UENUM(BlueprintType)
 enum class EDarkRelicPhase : uint8 { Ready, Running, Extracting, Escaped, Dead };
 UENUM(BlueprintType)
-enum class EDarkRelicAction : uint8 { None, Light, Heavy, Dodge, Heal };
+enum class EDarkRelicAction : uint8 { None, Light, Heavy, Dodge, Heal, RelicBurst, Rally };
 UENUM(BlueprintType)
 enum class EDarkRelicItem : uint8 { Iron, Tallow, Salt, Blackbell };
 
@@ -29,6 +29,20 @@ struct DARKRELICCORE_API FDarkRelicTuning
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic") float HealAmount = 30;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic") int32 HealCharges = 2;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic") float ExtractionSeconds = 20;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Warden") float ComboWindow = 0.8f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Warden") float FinisherDamage = 50;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Warden") float FinisherCost = 20;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Warden") float FinisherSeconds = 0.7f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Warden") float BurstDamage = 45;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Warden") float BurstCost = 35;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Warden") float BurstSeconds = 0.8f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Warden") float BurstCooldown = 8;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Warden") float RallyCost = 20;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Warden") float RallySeconds = 0.35f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Warden") float RallyDuration = 6;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Warden") float RallyCooldown = 20;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Warden") float RallyDamageMultiplier = 1.35f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Warden") float RallyDamageTaken = 0.75f;
 };
 
 USTRUCT(BlueprintType)
@@ -50,6 +64,13 @@ struct DARKRELICCORE_API FDarkRelicSnapshot
     UPROPERTY(BlueprintReadOnly, Category="Dark Relic") TArray<int32> Banked;
     UPROPERTY(BlueprintReadOnly, Category="Dark Relic") int32 Credits = 0;
     UPROPERTY(BlueprintReadOnly, Category="Dark Relic") int32 Upgrade = 0;
+    UPROPERTY(BlueprintReadOnly, Category="Dark Relic|Warden") int32 ComboStep = 0;
+    UPROPERTY(BlueprintReadOnly, Category="Dark Relic|Warden") bool Finisher = false;
+    UPROPERTY(BlueprintReadOnly, Category="Dark Relic|Warden") float ComboRemaining = 0;
+    UPROPERTY(BlueprintReadOnly, Category="Dark Relic|Warden") float AttackDamage = 0;
+    UPROPERTY(BlueprintReadOnly, Category="Dark Relic|Warden") float BurstCooldown = 0;
+    UPROPERTY(BlueprintReadOnly, Category="Dark Relic|Warden") float RallyCooldown = 0;
+    UPROPERTY(BlueprintReadOnly, Category="Dark Relic|Warden") float RallyRemaining = 0;
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDarkRelicStateChanged, FDarkRelicSnapshot, Snapshot);

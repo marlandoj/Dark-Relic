@@ -48,17 +48,22 @@ The three enemy roles use distinct Paragon Minions character bindings. These are
 | --- | --- |
 | **W / A / S / D** | Move |
 | **Mouse** | Look / control the camera |
-| **Left mouse button** | Light attack |
+| **Left mouse button** | Light attack; three timed strikes end in Sunder |
 | **Right mouse button** | Heavy attack |
 | **Left Shift** | Dodge / evasive hop |
 | **Q** | Heal |
+| **F** | Relic Burst: nearby magic shockwave, 8-second cooldown |
 | **E** | Collect a nearby pickup or start extraction inside the ward |
 | **U** | Buy Resolve at the end of a run |
-| **R** | Restart after extraction or death |
+| **R** | Warden Fury during play; restart after extraction or death |
 | **Escape** | Quit the game |
 | **M** | Toggle camera shake in the enhancement candidate |
 
 The current evasion uses Greystone's jump-start animation: an evasive hop, not a custom dodge roll. Keyboard and mouse are the documented controls.
+
+### Warden abilities candidate
+
+Chain three light strikes for **Sunder**, unleash a **Relic Burst** with F, or activate **Warden Fury** with R for six seconds of stronger attacks and reduced incoming damage. Cooldowns and stamina limit both relic arts. Warden combines sword combat with relic magic; Q healing and result-screen R restart are preserved. See [ability details and validation](WARDEN-ABILITIES.md). This branch's new abilities require the separate Warden build; older packages retain their original moves.
 
 ### Final-day enhancement candidate
 
