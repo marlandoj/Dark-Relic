@@ -15,6 +15,7 @@ bool UDarkRelicRunComponent::ApplyTuning()
     T.light_seconds = Tuning.LightSeconds; T.heavy_seconds = Tuning.HeavySeconds;
     T.dodge_seconds = Tuning.DodgeSeconds; T.invulnerable_seconds = Tuning.InvulnerableSeconds;
     T.heal_seconds = Tuning.HealSeconds; T.heal_amount = Tuning.HealAmount;
+    T.heal_charges = Tuning.HealCharges;
     T.extraction_seconds = Tuning.ExtractionSeconds;
     const bool Ok = Rules.configure(T);
     if (Ok) OnStateChanged.Broadcast(GetSnapshot());

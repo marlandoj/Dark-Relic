@@ -27,6 +27,7 @@ struct DARKRELICCORE_API FDarkRelicTuning
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic") float InvulnerableSeconds = 0.3f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic") float HealSeconds = 0.8f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic") float HealAmount = 30;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic") int32 HealCharges = 2;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic") float ExtractionSeconds = 20;
 };
 

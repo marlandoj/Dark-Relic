@@ -92,10 +92,10 @@ Do not add `-DarkRelicSmoke` or `-DarkRelicCapture` for normal play: those are a
 
 ### Get the gameplay source
 
-The default `main` branch is the documentation entry point. **The playable implementation is on [`hackathon/playable-widowfen`](https://github.com/marlandoj/dark-relic-hackathon-kit/tree/hackathon/playable-widowfen)** and remains under review in [PR #2](https://github.com/marlandoj/dark-relic-hackathon-kit/pull/2).
+The default **`main` branch contains the gameplay source, Unreal integration scripts, and documentation** delivered through [PR #1](https://github.com/marlandoj/dark-relic-hackathon-kit/pull/1) and [PR #2](https://github.com/marlandoj/dark-relic-hackathon-kit/pull/2).
 
 ```bash
-git clone --branch hackathon/playable-widowfen https://github.com/marlandoj/dark-relic-hackathon-kit.git
+git clone https://github.com/marlandoj/dark-relic-hackathon-kit.git
 cd dark-relic-hackathon-kit
 bash scripts/test-core.sh
 ```
@@ -109,16 +109,16 @@ This is a **source kit**, not a self-contained Unreal project. It includes the g
 The integration was developed with **Unreal Engine 5.8.1**, a Windows C++ build toolchain, and a prepared Third Person project containing Widowfen, Blackbell, Paragon Greystone, and Paragon Minions assets.
 
 1. Work in a disposable copy of your prepared Unreal project. Acquire required assets through their providers and preserve their licensing records.
-2. Copy `Plugins/DarkRelicCore` from the playable source branch into the project's `Plugins` directory. Back up any existing plugin first.
+2. Copy `Plugins/DarkRelicCore` from `main` into the project's `Plugins` directory. Back up any existing plugin first.
 3. Enable **Dark Relic Core**, generate project files, and compile the host project's **Development Editor / Win64** target. A Blueprint-only host needs a native C++ target.
-4. Follow [Character integration](https://github.com/marlandoj/dark-relic-hackathon-kit/blob/hackathon/playable-widowfen/CHARACTER-INTEGRATION.md) for the prepared map, asset bindings, validation, and packaging. The character map is `/Game/WidowfenPrep/LVL_DarkRelicCharacters`.
+4. Follow [Character integration](https://github.com/marlandoj/dark-relic-hackathon-kit/blob/main/CHARACTER-INTEGRATION.md) for the prepared map, asset bindings, validation, and packaging. The character map is `/Game/WidowfenPrep/LVL_DarkRelicCharacters`.
 5. Validate the scene in the editor, then package for Windows and verify the standalone executable.
 
-**The `integration/` scripts contain project-specific Windows paths and require already imported maps and assets. They are not blank-project installers.** Review paths, prerequisites, and existing build receipts before use. The older [Windows integration guide](https://github.com/marlandoj/dark-relic-hackathon-kit/blob/hackathon/playable-widowfen/WINDOWS-INTEGRATION.md) describes the original component-wiring route; its pending-build statements predate the current character-build verification.
+**The `integration/` scripts contain project-specific Windows paths and require already imported maps and assets. They are not blank-project installers.** Review paths, prerequisites, and existing build receipts before use. The older [Windows integration guide](https://github.com/marlandoj/dark-relic-hackathon-kit/blob/main/WINDOWS-INTEGRATION.md) describes the original component-wiring route; its pending-build statements predate the current character-build verification.
 
 ## Repository guide
 
-These paths are on the **playable source branch**:
+These paths are on **`main`**:
 
 | Path | Contents |
 | --- | --- |
@@ -143,7 +143,7 @@ Recorded character-build evidence as of **September 12, 2026**:
 - A separate normal-play session exited cleanly through Escape.
 - CSV profiling captured frames but returned **777003 during shutdown**. Performance acceptance remains unresolved; final lighting/art polish and human play/feel review are still pending.
 
-The hero image demonstrates current packaged visuals, not final art quality or benchmark performance. See [Character verification notes](https://github.com/marlandoj/dark-relic-hackathon-kit/blob/hackathon/playable-widowfen/CHARACTER-INTEGRATION.md).
+The hero image demonstrates current packaged visuals, not final art quality or benchmark performance. See [Character verification notes](https://github.com/marlandoj/dark-relic-hackathon-kit/blob/main/CHARACTER-INTEGRATION.md).
 
 ## Credits & asset availability
 
@@ -151,4 +151,4 @@ The character build uses **Epic Games' Paragon Greystone and Paragon Minions**, 
 
 This repository publishes project source, documentation, and the rendered gameplay screenshot above. It does **not** redistribute marketplace meshes, animations, textures, the complete Unreal Content folder, or the generated source asset library. Obtain those dependencies from their providers and retain their terms and receipts.
 
-Marketplace receipt export and final submission-license verification remain outstanding in the project records. See [Asset boundary](https://github.com/marlandoj/dark-relic-hackathon-kit/blob/hackathon/playable-widowfen/ASSET-BOUNDARY.md). This README grants no license to third-party assets and does not assert that all submission rights have been cleared.
+Marketplace receipt export and final submission-license verification remain outstanding in the project records. See [Asset boundary](https://github.com/marlandoj/dark-relic-hackathon-kit/blob/main/ASSET-BOUNDARY.md). This README grants no license to third-party assets and does not assert that all submission rights have been cleared.
