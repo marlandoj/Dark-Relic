@@ -1,4 +1,12 @@
-# Source candidate evaluation
+# Runtime verification
+
+September 12, 2026: the character candidate compiles with Unreal 5.8 on Windows and passes 90 portable checks plus 27 actual-world character/gameplay checks. BuildCookRun completed successfully; the cooked standalone executable also passed all 27 checks in 1080p DX11 and exited 0. Editor and packaged captures exited 0. Nine plugin source hashes match between Zo and Windows. See `CHARACTER-INTEGRATION.md` for the prepared project, scripts, bindings and evidence locations. Stability and performance results are recorded with the release evidence.
+
+The packaged default map contains the encounter actor, which consumes character bindings and drives the same gameplay component tested by the smoke. Required skeletal assets are installed and referenced by the map. Test save slots are isolated and cleaned up. No existing asset or project was deleted or renamed. Human input/feel, long traversal performance, final art quality and submission readiness are separate acceptance items. No real specialist review was invoked; routing remains shadow-only.
+
+## Historical source candidate evaluation
+
+The following records the original source-only candidate, before factory approval and Windows integration. Its pending statements do not describe the current playable character build.
 
 September 11, 2026. Source candidate only; full game and visual readiness remain Amber.
 

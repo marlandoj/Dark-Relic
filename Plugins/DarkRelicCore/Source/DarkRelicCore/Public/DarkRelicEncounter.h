@@ -7,6 +7,26 @@
 
 class ACharacter;
 class APlayerController;
+class USkeletalMesh;
+class UAnimSequence;
+class UBlendSpace;
+
+USTRUCT(BlueprintType)
+struct FDarkRelicCharacterVisuals
+{
+    GENERATED_BODY()
+    UPROPERTY(EditAnywhere, BlueprintReadWrite) TObjectPtr<USkeletalMesh> Mesh;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite) TObjectPtr<UAnimSequence> Idle;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite) TObjectPtr<UAnimSequence> Move;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite) TObjectPtr<UBlendSpace> Locomotion;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite) TObjectPtr<UAnimSequence> LightAttack;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite) TObjectPtr<UAnimSequence> HeavyAttack;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite) TObjectPtr<UAnimSequence> Dodge;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite) TObjectPtr<UAnimSequence> Death;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite) FVector LocomotionAxes = FVector(0,1,0);
+    UPROPERTY(EditAnywhere, BlueprintReadWrite) float LocomotionMaxSpeed = 600;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite) float MeshScale = 1;
+};
 
 USTRUCT()
 struct FDarkRelicEnemy
@@ -19,6 +39,7 @@ struct FDarkRelicEnemy
     float Cooldown = 1;
     float Windup = 0;
     int32 Role = 0;
+    float AnimationRemaining = 0;
 };
 
 UCLASS()
@@ -32,6 +53,9 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dark Relic") TObjectPtr<UDarkRelicRunComponent> Run;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic") FVector ExtractionCenter = FVector(0,1600,100);
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic") FVector PlayerStart = FVector(-650,-450,120);
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Characters") FDarkRelicCharacterVisuals HeroVisuals;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Characters") TArray<FDarkRelicCharacterVisuals> EnemyVisuals;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Characters") bool RequireCharacterVisuals = false;
     UPROPERTY() TObjectPtr<ACharacter> Player;
     UPROPERTY() TArray<FDarkRelicEnemy> Enemies;
     UPROPERTY() TArray<TObjectPtr<AActor>> Pickups;
@@ -49,6 +73,7 @@ public:
     int32 SmokeChecks = 0;
     float SmokeElapsed = 0;
     FString SmokeSlot;
+    float HeroAnimationRemaining = 0;
     UFUNCTION() void EndRun(bool Escaped);
     void Restart();
     void Attack(bool Heavy);

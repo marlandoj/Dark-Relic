@@ -19,8 +19,55 @@
 #include "HAL/PlatformMisc.h"
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimSequence.h"
+#include "Animation/AnimSingleNodeInstance.h"
+#include "Animation/BlendSpace.h"
+#include "Engine/SkeletalMesh.h"
 #include "UnrealClient.h"
 #include "Sound/SoundWaveProcedural.h"
+
+static bool ValidVisuals(const FDarkRelicCharacterVisuals& V)
+{
+    if (!V.Mesh || !V.Idle || !V.Move || !V.LightAttack || !V.Death) return false;
+    for (auto* Sequence : {V.Idle.Get(), V.Move.Get(), V.LightAttack.Get(), V.HeavyAttack.Get(), V.Dodge.Get(), V.Death.Get()})
+        if (Sequence && Sequence->GetSkeleton() != V.Mesh->GetSkeleton()) return false;
+    return !V.Locomotion || V.Locomotion->GetSkeleton() == V.Mesh->GetSkeleton();
+}
+
+static void ApplyVisuals(ACharacter* Character, const FDarkRelicCharacterVisuals& V)
+{
+    auto* Mesh = Character->GetMesh();
+    Mesh->EmptyOverrideMaterials();
+    Mesh->SetSkeletalMeshAsset(V.Mesh);
+    Mesh->SetRelativeScale3D(FVector(V.MeshScale));
+    Mesh->SetRelativeLocation(FVector(0,0,-Character->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()));
+    Mesh->SetRelativeRotation(FRotator(0,-90,0));
+    Mesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+    Mesh->PlayAnimation(V.Idle, true);
+}
+
+static bool PlayCharacterAction(ACharacter* Character, UAnimSequence* Sequence, float Duration)
+{
+    if (!Character || !Sequence || !Character->GetMesh()->GetSkeletalMeshAsset() ||
+        Sequence->GetSkeleton() != Character->GetMesh()->GetSkeletalMeshAsset()->GetSkeleton()) return false;
+    Character->GetMesh()->PlayAnimation(Sequence, false);
+    Character->GetMesh()->SetPlayRate(Sequence->GetPlayLength()/FMath::Max(Duration,0.05f));
+    return true;
+}
+
+static void TickCharacterVisuals(ACharacter* Character, const FDarkRelicCharacterVisuals& V, float& Remaining, float Dt)
+{
+    Remaining = FMath::Max(0.f, Remaining-Dt);
+    if (Remaining > 0 || !V.Mesh) return;
+    float Speed = Character->GetVelocity().Size2D();
+    UAnimationAsset* Asset = V.Locomotion && Speed > 10 ? static_cast<UAnimationAsset*>(V.Locomotion.Get()) :
+        static_cast<UAnimationAsset*>(Speed > 10 ? V.Move.Get() : V.Idle.Get());
+    auto* Mesh = Character->GetMesh();
+    auto* Instance = Mesh->GetSingleNodeInstance();
+    if (!Instance || Instance->GetCurrentAsset() != Asset) Mesh->PlayAnimation(Asset, true);
+    Mesh->SetPlayRate(V.Locomotion && Asset == V.Locomotion.Get() ? FMath::Max(1.f,Speed/FMath::Max(1.f,V.LocomotionMaxSpeed)) : 1.f);
+    if (V.Locomotion && Asset == V.Locomotion.Get())
+        if (auto* Node = Mesh->GetSingleNodeInstance()) Node->SetBlendSpacePosition(V.LocomotionAxes*Speed);
+}
 
 static void PlayRelicCue(UObject* WorldContext, float Frequency, float Duration, float Gain)
 {
@@ -73,6 +120,15 @@ bool ADarkRelicEncounter::InitializePlayer()
     auto* PC = UGameplayStatics::GetPlayerController(this, 0);
     Player = PC ? Cast<ACharacter>(PC->GetPawn()) : nullptr;
     if (!Player) return false;
+    if (RequireCharacterVisuals && (!ValidVisuals(HeroVisuals) || EnemyVisuals.Num()!=3 ||
+        EnemyVisuals.ContainsByPredicate([](const FDarkRelicCharacterVisuals& V){return !ValidVisuals(V);}) ||
+        !HeroVisuals.HeavyAttack || !HeroVisuals.Dodge))
+    {
+        UE_LOG(LogTemp, Error, TEXT("DARK_RELIC_CHARACTER_BINDINGS_INVALID"));
+        if (Smoke) { SmokeCheck(TEXT("required character bindings are compatible"),false); FinishSmoke(); }
+        return false;
+    }
+    if (ValidVisuals(HeroVisuals)) ApplyVisuals(Player,HeroVisuals);
     PC->ClientSetHUD(ADarkRelicHUD::StaticClass());
     PC->SetViewTarget(Player);
     PC->SetInputMode(FInputModeGameOnly());
@@ -80,6 +136,7 @@ bool ADarkRelicEncounter::InitializePlayer()
     Player->GetCharacterMovement()->MaxWalkSpeed = 440;
     Player->GetCharacterMovement()->bOrientRotationToMovement = true;
     Initialized = true;
+    if (!HeroVisuals.Mesh)
     if (auto* Saber=LoadObject<UStaticMesh>(nullptr,TEXT("/Game/WidowfenPrep/Sources/wooden_handle_saber/wooden_handle_saber/StaticMeshes/wooden_handle_saber.wooden_handle_saber")))
     {
         auto* Weapon=NewObject<UStaticMeshComponent>(Player);
@@ -120,6 +177,7 @@ void ADarkRelicEncounter::ResetEncounter()
         Enemy->GetMesh()->SetRelativeLocation(FVector(0,0,-88));
         Enemy->GetMesh()->SetRelativeRotation(FRotator(0,-90,0));
         Enemy->GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        if (EnemyVisuals.IsValidIndex(I) && ValidVisuals(EnemyVisuals[I])) ApplyVisuals(Enemy,EnemyVisuals[I]);
         Enemy->GetCharacterMovement()->bRunPhysicsWithNoController = true;
         Enemy->GetCharacterMovement()->bOrientRotationToMovement = true;
         Enemy->GetCharacterMovement()->MaxWalkSpeed = I == 1 ? 170 : 230;
@@ -150,6 +208,8 @@ void ADarkRelicEncounter::Restart()
 {
     if (!Player || !Run->StartRun()) return;
     AttackRemaining = 0;
+    HeroAnimationRemaining = 0;
+    if (HeroVisuals.Mesh) ApplyVisuals(Player,HeroVisuals);
     Player->TeleportTo(PlayerStart, FRotator(0,90,0), false, true);
     Player->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
     if (auto* PC = Cast<APlayerController>(Player->GetController()))
@@ -164,6 +224,7 @@ void ADarkRelicEncounter::Restart()
 void ADarkRelicEncounter::EndRun(bool Escaped)
 {
     AttackRemaining = 0;
+    if (!Escaped && PlayCharacterAction(Player,HeroVisuals.Death,1.6f)) HeroAnimationRemaining=100000;
     if (Player) Player->GetCharacterMovement()->DisableMovement();
     if (!Run->SaveBank()) Notify(TEXT("Bank save failed. Keep this session open."));
     else Notify(Escaped ? TEXT("Extraction complete. Your spoils are banked.") : TEXT("You fell. Carried loot was lost; your bank is safe."));
@@ -177,6 +238,12 @@ void ADarkRelicEncounter::Attack(bool Heavy)
     AttackDamage = Heavy ? 55 : 25;
     AttackHeavy = Heavy;
     PlayRelicCue(this,Heavy ? 130.f : 220.f,0.22f,0.12f);
+    if (HeroVisuals.Mesh)
+    {
+        HeroAnimationRemaining = Heavy ? 0.85f : 0.42f;
+        PlayCharacterAction(Player,Heavy ? HeroVisuals.HeavyAttack.Get() : HeroVisuals.LightAttack.Get(),HeroAnimationRemaining);
+        return;
+    }
     if (Player && Player->GetMesh()->GetAnimInstance())
     {
         auto* Animation=LoadObject<UAnimSequence>(nullptr,Heavy ? TEXT("/Game/Characters/Mannequins/Anims/Unarmed/Attack/MM_ChargedAttack.MM_ChargedAttack") : TEXT("/Game/Characters/Mannequins/Anims/Unarmed/Attack/MM_Attack_01.MM_Attack_01"));
@@ -195,6 +262,12 @@ void ADarkRelicEncounter::Dodge()
     FVector Direction = Player->GetLastMovementInputVector().GetSafeNormal2D();
     if (Direction.IsNearlyZero()) Direction = Player->GetActorForwardVector();
     Player->LaunchCharacter(Direction * 800 + FVector(0,0,80), true, true);
+    if (HeroVisuals.Mesh)
+    {
+        HeroAnimationRemaining=0.4f;
+        PlayCharacterAction(Player,HeroVisuals.Dodge,HeroAnimationRemaining);
+        return;
+    }
     if (auto* Anim=Player->GetMesh()->GetAnimInstance())
         if (auto* Sequence=LoadObject<UAnimSequence>(nullptr,TEXT("/Game/Characters/Mannequins/Anims/Unarmed/Jump/MM_Dash.MM_Dash")))
             Anim->PlaySlotAnimationAsDynamicMontage(Sequence,TEXT("DefaultSlot"),0.05f,0.1f);
@@ -230,6 +303,10 @@ void ADarkRelicEncounter::Tick(float Dt)
     auto* PC = Cast<APlayerController>(Player->GetController());
     const auto State = Run->GetSnapshot();
     const bool Live = State.Phase == EDarkRelicPhase::Running || State.Phase == EDarkRelicPhase::Extracting;
+    if (HeroVisuals.Mesh) TickCharacterVisuals(Player,HeroVisuals,HeroAnimationRemaining,Dt);
+    for (auto& E : Enemies)
+        if (IsValid(E.Actor) && E.Health>0 && EnemyVisuals.IsValidIndex(E.Role))
+            TickCharacterVisuals(E.Actor,EnemyVisuals[E.Role],E.AnimationRemaining,Dt);
     if(Capture)
     {
         float Previous=CaptureElapsed;
@@ -276,7 +353,13 @@ void ADarkRelicEncounter::Tick(float Dt)
                     bool Blocked = GetWorld()->LineTraceSingleByChannel(Hit,Player->GetActorLocation(),E.Actor->GetActorLocation(),ECC_Visibility,Query);
                     if (Blocked && Hit.GetActor() != E.Actor) continue;
                     E.Health -= AttackDamage; E.Windup = 0; E.Cooldown = 0.65f;
-                    if (E.Health <= 0) { E.Actor->GetCharacterMovement()->DisableMovement(); E.Actor->SetActorEnableCollision(false); E.Actor->SetActorHiddenInGame(true); Notify(E.Role == 2 ? TEXT("Bellkeeper defeated. Blackbell is unbound.") : TEXT("Enemy defeated.")); }
+                    if (E.Health <= 0)
+                    {
+                        E.Actor->GetCharacterMovement()->DisableMovement();
+                        E.Actor->SetActorEnableCollision(false);
+                        if (!EnemyVisuals.IsValidIndex(E.Role) || !PlayCharacterAction(E.Actor,EnemyVisuals[E.Role].Death,1.3f)) E.Actor->SetActorHiddenInGame(true);
+                        Notify(E.Role == 2 ? TEXT("Bellkeeper defeated. Blackbell is unbound.") : TEXT("Enemy defeated."));
+                    }
                     else Notify(FString::Printf(TEXT("%s hit: %.0f"), AttackHeavy ? TEXT("Heavy") : TEXT("Light"),AttackDamage));
                 }
         }
@@ -301,7 +384,16 @@ void ADarkRelicEncounter::Tick(float Dt)
             else if (Distance < 1000)
             {
                 if (Distance > Range) E.Actor->AddMovementInput(To.GetSafeNormal2D(),1,true);
-                else if (E.Cooldown <= 0) { E.Windup = E.Role == 2 ? 1.1f : 0.8f; E.Actor->SetActorRotation(To.Rotation()); }
+                else if (E.Cooldown <= 0)
+                {
+                    E.Windup = E.Role == 2 ? 1.1f : 0.8f;
+                    E.Actor->SetActorRotation(To.Rotation());
+                    if (EnemyVisuals.IsValidIndex(E.Role))
+                    {
+                        E.AnimationRemaining=E.Windup+0.25f;
+                        PlayCharacterAction(E.Actor,EnemyVisuals[E.Role].LightAttack,E.AnimationRemaining);
+                    }
+                }
             }
         }
     }
@@ -332,6 +424,15 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
     {
         SmokeCheck(TEXT("real player and HUD"),Player && UGameplayStatics::GetPlayerController(this,0)->GetHUD()->IsA<ADarkRelicHUD>());
         SmokeCheck(TEXT("three live enemies and four pickups"),Enemies.Num()==3 && Pickups.Num()==4);
+        if (RequireCharacterVisuals)
+        {
+            SmokeCheck(TEXT("Greystone mesh and live animation instance"),Player->GetMesh()->GetSkeletalMeshAsset()==HeroVisuals.Mesh && Player->GetMesh()->GetSingleNodeInstance()!=nullptr);
+            SmokeCheck(TEXT("stationary hero plays idle instead of clamped jogging blendspace"),Player->GetMesh()->GetSingleNodeInstance()->GetCurrentAsset()==HeroVisuals.Idle);
+            SmokeCheck(TEXT("hero heavy and dodge use hero skeleton"),ValidVisuals(HeroVisuals) && HeroVisuals.HeavyAttack && HeroVisuals.Dodge);
+            for(int32 I=0;I<Enemies.Num();++I)
+                SmokeCheck(FString::Printf(TEXT("enemy role %d owns compatible mesh and animation"),I),EnemyVisuals.IsValidIndex(I) && ValidVisuals(EnemyVisuals[I]) && Enemies[I].Actor->GetMesh()->GetSkeletalMeshAsset()==EnemyVisuals[I].Mesh && EnemyVisuals[I].Mesh!=HeroVisuals.Mesh);
+            SmokeCheck(TEXT("three visually distinct enemy roles"),EnemyVisuals.Num()==3 && EnemyVisuals[0].Mesh!=EnemyVisuals[1].Mesh && EnemyVisuals[1].Mesh!=EnemyVisuals[2].Mesh && EnemyVisuals[0].Mesh!=EnemyVisuals[2].Mesh);
+        }
         for (auto& E : Enemies) { E.Cooldown = 100; E.Windup=0; }
         Player->TeleportTo(FVector(-950,50,110),FRotator::ZeroRotator,false,true); Interact();
         SmokeCheck(TEXT("spatial pickup reaches production rules"),Run->GetSnapshot().Carried[0]==1);
@@ -349,11 +450,13 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
         Player->TeleportTo(FVector(-300,-200,110),FRotator::ZeroRotator,false,true);
         Enemies[0].Actor->TeleportTo(FVector(-160,-200,110),FRotator(0,180,0),false,true);
         Attack(false); SmokeStage=10;
+        if(RequireCharacterVisuals) SmokeCheck(TEXT("light attack plays Greystone sequence"),Player->GetMesh()->GetSingleNodeInstance()->GetCurrentAsset()==HeroVisuals.LightAttack);
     }
     else if(SmokeStage==10 && S.Action==EDarkRelicAction::None)
     {
         SmokeCheck(TEXT("light attack contacts enemy in world"),Enemies[0].Health==35);
         Attack(true); SmokeStage=11;
+        if(RequireCharacterVisuals) SmokeCheck(TEXT("heavy attack plays Greystone sequence"),Player->GetMesh()->GetSingleNodeInstance()->GetCurrentAsset()==HeroVisuals.HeavyAttack);
     }
     else if(SmokeStage==11 && S.Action==EDarkRelicAction::None)
     {
