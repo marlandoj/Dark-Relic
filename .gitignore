@@ -5,3 +5,4 @@ Saved/
 build/
 __pycache__/
 *.zip
+.watchdog-state.json
