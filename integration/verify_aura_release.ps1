@@ -13,13 +13,14 @@ try {
     if(!$Build.complete -or $Build.phase -ne 'passed') { throw 'Aura build is not verified' }
     if(Get-Process UnrealEditor,DarkRelicSmoke,UnrealBuildTool -ErrorAction SilentlyContinue) { throw 'Another runtime remains active' }
     $State.phase='packaged-aura-capture'; Save-State
+    $CaptureStarted=[DateTime]::Now
     $P=Start-Process "$Package\Binaries\Win64\DarkRelicSmoke.exe" -ArgumentList @('-DarkRelicAuraCapture','-unattended','-dx11','-windowed','-ResX=1920','-ResY=1080',"-abslog=$Evidence\packaged-aura-capture.log") -PassThru
     $State.childPid=$P.Id; Save-State
     if(!$P.WaitForExit(120000) -or $P.ExitCode -ne 0) { throw 'Packaged aura capture failed; inspect child' }
     $State.auraCaptureExit=$P.ExitCode
     foreach($Name in @('charge','peak','fade','off')) {
         $Frame="$Package\IntegrationEvidence\aura-$Name.png"
-        if(!(Test-Path $Frame) -or (Get-Item $Frame).Length -lt 1000) { throw "Missing $Name capture" }
+        if(!(Test-Path $Frame) -or (Get-Item $Frame).Length -lt 1000 -or (Get-Item $Frame).LastWriteTime -lt $CaptureStarted) { throw "Missing or stale $Name capture" }
         Copy-Item $Frame "$Evidence\packaged-aura-$Name.png"
     }
     $State.phase='ordinary-play'; Save-State

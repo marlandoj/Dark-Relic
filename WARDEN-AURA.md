@@ -2,7 +2,7 @@
 
 Press **R** during play to activate Warden Fury. A short Greystone challenge gesture accompanies the existing power-up voice. A warm crimson-and-gold rim aura, rising embers and local light build around Warden, remain visible while Fury is active, and fade smoothly during its final two seconds. Fury still lasts six seconds by default.
 
-The flourish lasts up to 1.1 seconds but does not extend the existing 0.35-second action recovery. Attacks and dodges can replace the animation after their normal eligibility checks. Damage, stamina, cooldowns, hit recoil, healing and saves retain their existing rules. **M** disables camera shake and freezes decorative aura motion while keeping the duration fade visible.
+The flourish lasts up to 1.1 seconds but does not extend the existing 0.35-second action recovery. Attacks and dodges can replace the animation after their normal eligibility checks. Damage, stamina, cooldowns, hit recoil, healing and saves retain their existing rules. **M** disables camera shake and ember orbit/rise while keeping the glow, material shimmer and duration fade visible.
 
 The aura reads the same remaining-power timer as combat. It disappears on expiry, death, extraction completion and restart. Nine reusable, collision-free meshes and one shadowless light bound its runtime cost; no new marketplace assets or paid generation are required.
 

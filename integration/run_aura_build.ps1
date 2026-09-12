@@ -47,6 +47,7 @@ try {
         $State.runtimeExit=$Prior.runtimeExit
         $State.captureExit=$Prior.captureExit
     }
+    Run-Game "$Engine\Binaries\Win64\UnrealEditor.exe" @("$Root\DarkRelicSmoke.uproject",$Map,'-game','-DarkRelicAuraCapture','-unattended','-dx11','-windowed','-ResX=1920','-ResY=1080',"-abslog=$Evidence\aura-capture.log") 'aura-capture'
     if($Package) {
         $State.phase='package'; Save-State
         $ConfigPath="$Root\Config\DefaultEngine.ini"
@@ -66,7 +67,6 @@ try {
         Run-Game 'H:\DarkRelicAuraPackage\Windows\DarkRelicSmoke.exe' @('-DarkRelicCapture','-unattended','-dx11','-windowed','-ResX=1920','-ResY=1080',"-abslog=$Evidence\character-packaged-capture.log") 'packaged-capture'
         Copy-Item "$PackageEvidence\playable-frame.png" "$Evidence\character-packaged-frame.png"
     }
-    Run-Game "$Engine\Binaries\Win64\UnrealEditor.exe" @("$Root\DarkRelicSmoke.uproject",$Map,'-game','-DarkRelicAuraCapture','-unattended','-dx11','-windowed','-ResX=1920','-ResY=1080',"-abslog=$Evidence\aura-capture.log") 'aura-capture'
     $State.phase='passed'
 } catch { $State.phase='failed'; $State.error=$_.Exception.Message }
 finally { $State.complete=$true; $State.finished=[DateTime]::UtcNow.ToString('o'); Save-State }
