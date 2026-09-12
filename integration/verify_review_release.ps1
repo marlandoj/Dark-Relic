@@ -61,8 +61,10 @@ try {
     $State.sourceFiles=$Expected.Count
     $State.packageHashes=@(Get-ChildItem 'H:\DarkRelicPolishPackage' -Recurse -File | Where-Object {$_.Extension -in '.exe','.pak','.ucas','.utoc'} | ForEach-Object {@{path=$_.FullName;sha256=(Get-FileHash $_.FullName -Algorithm SHA256).Hash}})
     $Shortcut=Join-Path ([Environment]::GetFolderPath('Desktop')) 'Dark Relic Polish Candidate.lnk'
-    if(Test-Path $Shortcut) { throw 'Candidate shortcut already exists; inspect before replacement' }
     $Link=$Shell.CreateShortcut($Shortcut)
+    if(Test-Path $Shortcut) {
+        if($Link.TargetPath -ne 'H:\DarkRelicPolishPackage\Windows\DarkRelicSmoke.exe' -or $Link.Arguments -ne '-dx11 -windowed -ResX=1920 -ResY=1080') { throw 'Existing candidate shortcut differs; preserve it for inspection' }
+    }
     $Link.TargetPath='H:\DarkRelicPolishPackage\Windows\DarkRelicSmoke.exe'
     $Link.Arguments='-dx11 -windowed -ResX=1920 -ResY=1080'
     $Link.WorkingDirectory='H:\DarkRelicPolishPackage\Windows'
