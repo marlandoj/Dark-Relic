@@ -4,7 +4,7 @@
 
 ![Dark Relic gameplay splash: the armored Warden faces Dreg, Hexbound and the Bellkeeper among Widowfen's ruined timber buildings.](docs/images/dark-relic-hero.jpg)
 
-*Actual gameplay capture from the packaged Windows character build, September 12, 2026. This is the hackathon prototype's current appearance.*
+*Actual game-view capture from the enhanced Unreal candidate, September 12, 2026.*
 
 [Game & world](#game--world) · [How to play](#how-to-play) · [Install & run](#install--run) · [Repository guide](#repository-guide) · [Build status](#build-status)
 
@@ -62,7 +62,7 @@ The current evasion uses Greystone's jump-start animation: an evasive hop, not a
 
 ### Final-day enhancement candidate
 
-This branch adds softer Widowfen lighting, warm path lanterns, landed-hit sparks and sound, optional camera shake, procedural swamp ambience and footsteps, and escalating extraction bells and ward effects. The Bellkeeper marks a 360 cm area before striking; leave the ring or time your dodge. Below half health it becomes enraged, with faster movement and a shorter but still visible warning. See [enhancement behavior and validation boundaries](ENHANCEMENTS.md). Windows build and human playtest results must be verified before treating this candidate as the delivered demo.
+This branch adds softer Widowfen lighting, warm path lanterns, landed-hit sparks and sound, optional camera shake, procedural swamp ambience and footsteps, and escalating extraction bells and ward effects. The Bellkeeper marks a 360 cm area before striking; leave the ring or time your dodge. Below half health it becomes enraged, with faster movement and a shorter but still visible warning. The separate Windows candidate has passed compilation, packaging and automated gameplay checks. Human end-to-end acceptance remains pending. See [enhancement behavior and validation boundaries](ENHANCEMENTS.md) and the [playtest checklist](PLAYTEST.md).
 
 ### Loot and progression
 
@@ -140,15 +140,15 @@ The Unreal adapter consumes the portable rules, so core checks exercise the same
 
 ## Build status
 
-Recorded character-build evidence as of **September 12, 2026**:
+Recorded enhancement-candidate evidence as of **September 12, 2026**:
 
-- **90 portable gameplay checks** passed on the delivered source.
+- **105 portable gameplay checks** passed, including an AddressSanitizer/UndefinedBehaviorSanitizer run.
 - Unreal compilation, character bindings, packaging, and rendered captures completed successfully.
-- **Five packaged smoke runs passed 27 checks each**, with exit code 0. These are automated runs, not five human playthroughs.
+- **33 editor runtime checks and 33 packaged runtime checks** passed with exit code 0, including the new Bellkeeper and feedback behaviors. These are automated checks, not human playthroughs.
 - A separate normal-play session exited cleanly through Escape.
-- CSV profiling captured frames but returned **777003 during shutdown**. Performance acceptance remains unresolved; final lighting/art polish and human play/feel review are still pending.
+- CSV profiling captured frames but returned **777003 during shutdown** with both audio enabled and disabled. The bounded investigation is parked. Human play/feel review and full performance acceptance remain pending.
 
-The hero image demonstrates current packaged visuals, not final art quality or benchmark performance. See [Character verification notes](https://github.com/marlandoj/dark-relic-hackathon-kit/blob/main/CHARACTER-INTEGRATION.md).
+The hero image demonstrates the enhanced map's game view, not final art quality or benchmark performance. See [Character verification notes](CHARACTER-INTEGRATION.md).
 
 ## Credits & asset availability
 

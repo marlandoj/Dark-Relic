@@ -1,19 +1,28 @@
 # Dark Relic factory source lane
 
 status: in_progress
-watchdog: active
+watchdog: paused
 
 ## Final-day enhancement candidate (ZOU-1634)
 
 - [x] Preserve merged source and select isolated candidate paths
 - [x] Implement five priority enhancements in source
 - [x] Pass 105 portable checks including Bellkeeper timing, enrage and damage boundaries
-- [ ] Compile and apply the isolated enhanced map in Windows
-- [ ] Pass expanded packaged runtime smoke and inspect rendered output
-- [ ] Bound profiler diagnosis and record evidence
+- [x] Compile and apply the isolated enhanced map in Windows
+- [x] Pass expanded packaged runtime smoke and inspect rendered output
+- [ ] Read final normal-exit/hash/shortcut receipt after desktop connection recovery
+- [x] Bound profiler diagnosis and record evidence
 - [ ] Human end-to-end playtest before submission readiness
 
 Primary chat owns authorized Windows work. The historical source-only ownership below is superseded. Replay variation remains stretch. Current candidate details: ENHANCEMENTS.md.
+
+Final candidate add4728 passed compilation, bindings, 33 editor and packaged runtime checks, packaging and captures at 5:58 AM Arizona on September 12. The corrected game-view capture was inspected. 105 portable checks pass. Ordinary gameplay on the preceding candidate closes with exit 0. The final normal-exit/hash/shortcut verification was submitted, but desktop API timeouts prevent reading its result; inspect enhancement-release.json before any retry. CSV profiling still exits 777003 with audio enabled or disabled; its bounded diagnosis is parked in ZOU-1633. Human playtest remains outstanding.
+
+BLOCKED: Recover desktop receipt access to confirm final normal exit and candidate shortcut; human end-to-end acceptance is also pending.
+
+## Historical factory source delivery
+
+The ownership, private repository URL and runtime status below describe the earlier source-only delivery and are superseded by the current sprint above.
 
 - [x] Recover game scope and separate Windows ownership
 - [x] Resolve Unreal game specialists in shadow mode
