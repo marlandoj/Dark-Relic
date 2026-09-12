@@ -1,5 +1,19 @@
 # Dark Relic hackathon source kit
 
+## Playable Widowfen integration
+
+The `hackathon/playable-widowfen` branch adds a real Unreal encounter actor and HUD on top of the approved 90-check portable core. In the prepared Windows project, it drives light/heavy contact, enemy windups, dodge/heal, three enemy roles, four loot types, the elite relic lock, timed extraction, bank persistence, one upgrade, and restart. It preserves the Third Person template's movement and camera.
+
+Controls: WASD and mouse; left/right mouse for light/heavy attacks; Shift to dodge; Q to heal; E to collect or extract. After a run, R restarts and U buys the permanent upgrade. Escape quits.
+
+`integration/build_playable_map.py` duplicates the imported Widowfen look-development map and wires the encounter. `integration/polish_playable_map.py` adjusts exposure and adds surrounding deadwood. `integration/run_playable_build.ps1` compiles, assembles, runs actual-world checks, captures DX11 gameplay, and packages the prepared project. These scripts target the existing isolated `H:\DarkRelicIntegration-97ff125` project; they are not a clean-project installer. The repository does not distribute Unreal, marketplace assets, or binary maps.
+
+Verified on Windows: Development Editor compilation, 18 runtime checks including real attack contact and enemy damage, and a rendered 1080p DX11 capture. The final standalone package passed all 18 checks in rendered 1080p DX11 and exited cleanly; packaging exited 0. Character presentation currently uses Epic's working template mannequin; Greystone/Minions import and final art approval remain outstanding. No AAA-quality claim is made.
+
+Run the executable with `-DarkRelicSmoke -NullRHI -nosound` to exercise the same encounter methods and component tick used in normal play. The smoke uses an isolated save slot and removes it. `-DarkRelicCapture -dx11 -windowed -ResX=1920 -ResY=1080` records a frame and exits. Ensure the project's `IntegrationEvidence` directory exists before running these modes.
+
+The operator's later authorization gives Zo ownership of Windows integration; the earlier operator-only source-lane notes below are historical.
+
 Source-only companion to the Unreal 5.8.1 solo PvE extraction game. The operator owns all Windows editor operations and final packaging. This repository does not contain a playable Unreal project or marketplace assets.
 
 Canonical game brief: ../dark-fantasy-extraction-rpg/hackathon/TASK.md. Frozen Widowfen art and acquired assets remain in that project. Preserve third-person solo, one weapon, light/heavy attack, dodge/heal, two common enemy roles, one elite, three ordinary loot items, Blackbell Relic, extraction countdown, bank-on-success/lose-on-death, one upgrade and restart. No multiplayer, blockchain, new art purchases, or desktop automation.

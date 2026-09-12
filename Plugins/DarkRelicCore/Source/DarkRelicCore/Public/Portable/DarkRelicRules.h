@@ -16,6 +16,7 @@ struct Tuning {
     double light_seconds = 0.5, heavy_seconds = 0.9, dodge_seconds = 0.55;
     double invulnerable_seconds = 0.3, heal_seconds = 0.8, heal_amount = 30;
     double extraction_seconds = 20;
+    int heal_charges = 2;
 };
 
 struct Bank {
@@ -40,6 +41,7 @@ class Rules {
 public:
     static constexpr int MaxCount = 1000000;
     static constexpr int MaxCredits = 1000000000;
+    static constexpr int MaxHeals = 100;
     static constexpr int UpgradeCost = 100;
     static constexpr std::array<int, 4> Prices{10, 15, 20, 100};
 
@@ -55,12 +57,14 @@ public:
             t.dodge_cost, t.invulnerable_seconds};
         for (double v : positive) if (!finite(v) || v <= 0 || v > 1000000) return false;
         for (double v : nonnegative) if (!finite(v) || v < 0 || v > 1000000) return false;
+        if (t.heal_charges < 0 || t.heal_charges > MaxHeals) return false;
         if (t.invulnerable_seconds > t.dodge_seconds || t.light_cost > t.stamina ||
             t.heavy_cost > t.stamina || t.dodge_cost > t.stamina) return false;
         tuning_ = t;
         state_.max_health = t.health + state_.bank.upgrade * 20;
         state_.health = state_.max_health;
         state_.stamina = t.stamina;
+        state_.heals = t.heal_charges;
         return true;
     }
 
@@ -73,6 +77,7 @@ public:
         state_.max_health = tuning_.health + bank.upgrade * 20;
         state_.health = state_.max_health;
         state_.stamina = tuning_.stamina;
+        state_.heals = tuning_.heal_charges;
         pickups_.clear();
         return true;
     }
@@ -188,6 +193,7 @@ public:
         state_.max_health = tuning_.health + bank.upgrade * 20;
         state_.health = state_.max_health;
         state_.stamina = tuning_.stamina;
+        state_.heals = tuning_.heal_charges;
         pickups_.clear();
         return true;
     }
