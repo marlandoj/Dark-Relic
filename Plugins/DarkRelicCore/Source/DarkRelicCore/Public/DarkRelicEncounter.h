@@ -3,6 +3,7 @@
 #include "GameFramework/Actor.h"
 #include "GameFramework/HUD.h"
 #include "DarkRelicRunComponent.h"
+#include "Portable/BellkeeperAttack.h"
 #include "DarkRelicEncounter.generated.h"
 
 class ACharacter;
@@ -10,6 +11,22 @@ class APlayerController;
 class USkeletalMesh;
 class UAnimSequence;
 class UBlendSpace;
+class UAudioComponent;
+
+USTRUCT()
+struct FDarkRelicTimedSound
+{
+    GENERATED_BODY()
+    UPROPERTY() TObjectPtr<UAudioComponent> Component;
+    float Remaining = 0;
+};
+
+struct FDarkRelicImpact
+{
+    FVector Position = FVector::ZeroVector;
+    float Remaining = 0.3f;
+    bool Heavy = false;
+};
 
 USTRUCT(BlueprintType)
 struct FDarkRelicCharacterVisuals
@@ -40,6 +57,8 @@ struct FDarkRelicEnemy
     float Windup = 0;
     int32 Role = 0;
     float AnimationRemaining = 0;
+    dark_relic::BellkeeperAttack BellAttack;
+    FVector AreaCenter = FVector::ZeroVector;
 };
 
 UCLASS()
@@ -50,6 +69,7 @@ public:
     ADarkRelicEncounter();
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaSeconds) override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dark Relic") TObjectPtr<UDarkRelicRunComponent> Run;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic") FVector ExtractionCenter = FVector(0,1600,100);
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic") FVector PlayerStart = FVector(-650,-450,120);
@@ -74,6 +94,23 @@ public:
     float SmokeElapsed = 0;
     FString SmokeSlot;
     float HeroAnimationRemaining = 0;
+    UPROPERTY() TArray<FDarkRelicTimedSound> ActiveSounds;
+    TArray<FDarkRelicImpact> Impacts;
+    float FootstepRemaining = 0;
+    float AmbienceRemaining = 0;
+    float BellRemaining = 0;
+    float WardPulse = 0;
+    float CelebrationRemaining = 0;
+    float ShakeRemaining = 0;
+    float ShakeStrength = 0;
+    bool ReducedMotion = false;
+    int32 ImpactCount = 0;
+    int32 BellCount = 0;
+    int32 AreaAttackCount = 0;
+    float SmokeAreaHealth = 0;
+    void PlayCue(float Frequency, float Duration, float Gain, int32 Texture = 0, const FVector* Position = nullptr);
+    void FeedbackTick(float DeltaSeconds);
+    void Impact(const FVector& Position, bool Heavy);
     UFUNCTION() void EndRun(bool Escaped);
     void Restart();
     void Attack(bool Heavy);

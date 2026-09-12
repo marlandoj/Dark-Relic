@@ -1,4 +1,5 @@
 #include "Portable/DarkRelicRules.h"
+#include "Portable/BellkeeperAttack.h"
 #include <cstdlib>
 #include <iostream>
 #include <limits>
@@ -16,6 +17,24 @@ void win(Rules& game) {
     check(game.snapshot().phase == Phase::Escaped, "escaped");
 }
 int main() {
+    BellkeeperAttack boss;
+    check(!boss.begin(), "boss waits for initial cooldown");
+    check(!boss.update_health(75,150), "boss not enraged at exactly half");
+    check(!boss.update_health(0,150), "dead boss cannot enter enrage");
+    check(!boss.tick(3) && boss.begin(), "boss starts area windup after cooldown");
+    check(!boss.tick(1.59), "boss never hits before telegraph completes");
+    check(boss.tick(0.02) && !boss.tick(0.1), "boss resolves once even with overshoot");
+    check(!boss.begin(), "boss has post-area cooldown");
+    check(boss.hits(360,180,true), "boss radius and height boundaries inclusive");
+    check(!boss.hits(361,0,true) && !boss.hits(200,181,true), "outside area and height safe");
+    check(!boss.hits(200,0,false), "cover blocks area damage");
+    check(!boss.hits(std::numeric_limits<double>::quiet_NaN(),0,true), "invalid area distance rejected");
+    check(boss.update_health(74,150) && !boss.update_health(70,150), "enrage triggers once below half");
+    boss.tick(7);
+    check(boss.begin() && boss.duration>=1.25 && boss.damage()==34, "enrage keeps readable warning and tuned damage");
+    check(!boss.tick(-1) && !boss.tick(std::numeric_limits<double>::quiet_NaN()), "invalid boss delta rejected");
+    boss.cancel();
+    check(!boss.tick(2) && boss.remaining==0, "death cancellation cannot resolve pending area");
     Rules g;
     check(!g.extract(), "cannot extract before run");
     check(!g.pickup(Item::Iron, 1, 1), "no loot before run");
