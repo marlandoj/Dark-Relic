@@ -3,6 +3,17 @@
 status: complete
 watchdog: off
 
+## Warden hit and voice feedback (ZOU-1643)
+
+- [x] Add slight collision-swept recoil and 11 bound Greystone vocal events
+- [x] Pass 146 portable checks and 66 rendered, audio-enabled Unreal runtime checks
+- [x] Package and verify the standalone candidate: 66 checks and ordinary Escape exit 0
+- [x] Deliver separate desktop shortcut and verify all 21 protected package hashes
+
+Source 1219e0a, PR #5 stacked on #4. Windows project H:\DarkRelicFeedback-20260912, output H:\DarkRelicFeedbackPackage. Prior packages preserved. See WARDEN-FEEDBACK.md. Human playfeel acceptance remains pending.
+
+Delivered September 12, 2026 at 8:16 AM Arizona: Dark Relic Warden Feedback desktop shortcut, 11 cooked voice bindings, 66 editor and 66 packaged checks, clean foreground Escape exit, ten source hashes matched. All eleven vocal event types logged active playback. No runtime/build process remains. Specialist routing is shadow-only, not independent approval. No GitHub CI checks are configured for this branch; validation ran locally and on Windows.
+
 ## Active Warden abilities (ZOU-1642)
 
 - [x] Implement Sunder combo, F Relic Burst, R Warden Fury in shared rules and live encounter
