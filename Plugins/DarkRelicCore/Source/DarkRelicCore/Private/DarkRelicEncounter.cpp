@@ -1118,7 +1118,7 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
         Enemies[2].Actor->TeleportTo(FVector(-160,-200,110),FRotator::ZeroRotator,false,true);
         SmokeStage=30;
     }
-    else if (SmokeStage==30 && S.Action==EDarkRelicAction::None && S.Stamina>=95)
+    else if (SmokeStage==30 && S.Action==EDarkRelicAction::None && S.Stamina>=95 && VoiceRemaining<=0)
     {
         Attack(false); SmokeStage=31;
     }
