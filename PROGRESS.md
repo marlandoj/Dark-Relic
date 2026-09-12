@@ -28,6 +28,9 @@ Warden implementation and automated delivery verification completed September 12
 
 Prior enhanced release receipt recovered: passed, Escape exit 0, protected original hashes unchanged, separate enhanced shortcut verified. The old desktop-access blocker below is historical.
 
+
+Final delivery verified at 6:07:54 AM Arizona: normal Escape exit 0, all seven original package hashes unchanged, seven candidate executable/container hashes recorded, and Dark Relic Enhanced Candidate desktop shortcut created and read back. Original shortcut preserved. All build/verification workers completed. Human end-to-end playtest remains pending; profiler ZOU-1633 and submission-license verification remain open.
+
 ## Final-day enhancement candidate (ZOU-1634)
 
 - [x] Preserve merged source and select isolated candidate paths
@@ -35,7 +38,7 @@ Prior enhanced release receipt recovered: passed, Escape exit 0, protected origi
 - [x] Pass 105 portable checks including Bellkeeper timing, enrage and damage boundaries
 - [x] Compile and apply the isolated enhanced map in Windows
 - [x] Pass expanded packaged runtime smoke and inspect rendered output
-- [ ] Read final normal-exit/hash/shortcut receipt after desktop connection recovery
+- [x] Verify final normal exit, original package hashes and candidate desktop shortcut
 - [x] Bound profiler diagnosis and record evidence
 - [ ] Human end-to-end playtest before submission readiness
 
