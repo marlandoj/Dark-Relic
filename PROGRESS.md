@@ -1,17 +1,19 @@
 # Dark Relic factory source lane
 
-status: in_progress
-watchdog: active
+status: complete
+watchdog: off
 
 ## Active Warden abilities (ZOU-1642)
 
 - [x] Implement Sunder combo, F Relic Burst, R Warden Fury in shared rules and live encounter
 - [x] Add readable HUD states and reuse existing animations/audio
 - [x] Pass 146 portable gameplay checks
-- [ ] Compile and run 47 expected Unreal/packaged checks in separate candidate
-- [ ] Inspect rendered abilities and verify candidate delivery
+- [x] Compile and run 47 Unreal/packaged checks in separate candidate
+- [x] Verify rendered capture and candidate delivery
 
 Primary chat owns the authorized desktop integration. Source baseline dfbb3f8; managed worktree dark-relic-warden; Windows project H:\DarkRelicWarden-20260912 and package H:\DarkRelicWardenPackage. No previous release is replaced. Details: WARDEN-ABILITIES.md.
+
+Warden implementation and automated delivery verification completed September 12 at 7:41 AM Arizona. Built source 69f9f72: 146 portable checks, 47 editor and packaged runtime checks, compilation, bindings, package and capture pass. Fresh ordinary launch exits 0 through foreground Escape. Candidate shortcut and seven package hashes are recorded. Human acceptance remains pending in ZOU-1642; PR #4 is stacked on PR #3. Remaining older-sprint checkboxes below are historical or separate acceptance scope.
 
 Prior enhanced release receipt recovered: passed, Escape exit 0, protected original hashes unchanged, separate enhanced shortcut verified. The old desktop-access blocker below is historical.
 
@@ -30,7 +32,7 @@ Primary chat owns authorized Windows work. The historical source-only ownership 
 
 Final candidate add4728 passed compilation, bindings, 33 editor and packaged runtime checks, packaging and captures at 5:58 AM Arizona on September 12. The corrected game-view capture was inspected. 105 portable checks pass. Ordinary gameplay on the preceding candidate closes with exit 0. The final normal-exit/hash/shortcut verification was submitted, but desktop API timeouts prevent reading its result; inspect enhancement-release.json before any retry. CSV profiling still exits 777003 with audio enabled or disabled; its bounded diagnosis is parked in ZOU-1633. Human playtest remains outstanding.
 
-BLOCKED: Recover desktop receipt access to confirm final normal exit and candidate shortcut; human end-to-end acceptance is also pending.
+Historical desktop-receipt blocker resolved. Human end-to-end acceptance remains pending.
 
 ## Historical factory source delivery
 
