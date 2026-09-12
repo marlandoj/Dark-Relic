@@ -61,19 +61,19 @@ The three enemy roles use distinct Paragon Minions character bindings. These are
 
 The current evasion uses Greystone's jump-start animation: an evasive hop, not a custom dodge roll. Keyboard and mouse are the documented controls.
 
-### Warden abilities candidate
+### Warden abilities and hit reactions
 
-The **enemy feedback candidate** adds directional minion knockback and varied pain grunts, plus smaller Bellkeeper recoil and deeper vocals. [Enemy reaction details and validation](ENEMY-FEEDBACK.md) describe the separate candidate.
+The latest **Enemy Feedback** Windows candidate includes every enhancement described here. Minions recoil and grunt when hit; Bellkeeper has smaller recoil and deeper vocals. See [enemy reaction details and validation](ENEMY-FEEDBACK.md).
 
-The **Fury aura candidate** adds an expressive power-up gesture, crimson-and-gold rim glow, rising embers and local lighting. The glow fades with the remaining Fury power. See [transformation behavior and validation](WARDEN-AURA.md) for the separate candidate's status.
+Fury adds an expressive power-up gesture, crimson-and-gold rim glow, rising embers and local lighting. The glow fades with the remaining Fury power. See [transformation behavior and validation](WARDEN-AURA.md).
 
-The **Warden feedback candidate** adds a short knockback on landed enemy hits and Greystone vocal reactions for strikes, dodges, relic powers, Fury, healing and pain. See [hit and voice feedback](WARDEN-FEEDBACK.md) for its separate build and validation status.
+Warden reacts to landed enemy hits with a short knockback and has Greystone vocal reactions for strikes, dodges, relic powers, Fury, healing and pain. See [hit and voice feedback](WARDEN-FEEDBACK.md).
 
-Chain three light strikes for **Sunder**, unleash a **Relic Burst** with F, or activate **Warden Fury** with R for six seconds of stronger attacks and reduced incoming damage. Cooldowns and stamina limit both relic arts. Warden combines sword combat with relic magic; Q healing and result-screen R restart are preserved. See [ability details and validation](WARDEN-ABILITIES.md). This branch's new abilities require the separate Warden build; older packages retain their original moves.
+Chain three light strikes for **Sunder**, unleash a **Relic Burst** with F, or activate **Warden Fury** with R for six seconds of stronger attacks and reduced incoming damage. Cooldowns and stamina limit both relic arts. Warden combines sword combat with relic magic; Q healing and result-screen R restart are preserved. See [ability details and validation](WARDEN-ABILITIES.md). Older Windows packages retain their original moves; use the latest candidate for the complete feature set.
 
 ### Final-day enhancement candidate
 
-This branch adds softer Widowfen lighting, warm path lanterns, landed-hit sparks and sound, optional camera shake, procedural swamp ambience and footsteps, and escalating extraction bells and ward effects. The Bellkeeper marks a 360 cm area before striking; leave the ring or time your dodge. Below half health it becomes enraged, with faster movement and a shorter but still visible warning. The separate Windows candidate has passed compilation, packaging and automated gameplay checks. Human end-to-end acceptance remains pending. See [enhancement behavior and validation boundaries](ENHANCEMENTS.md) and the [playtest checklist](PLAYTEST.md).
+The demo includes softer Widowfen lighting, warm path lanterns, landed-hit sparks and sound, optional camera shake, procedural swamp ambience and footsteps, and escalating extraction bells and ward effects. The Bellkeeper marks a 360 cm area before striking; leave the ring or time your dodge. Below half health it becomes enraged, with faster movement and a shorter but still visible warning. The latest Windows candidate has passed compilation, packaging and automated gameplay checks. Human end-to-end acceptance remains pending. See [enhancement behavior and validation boundaries](ENHANCEMENTS.md) and the [playtest checklist](PLAYTEST.md).
 
 ### Loot and progression
 
@@ -95,7 +95,7 @@ The default extraction countdown is **20 seconds**, and each run starts with **t
 If you have received the complete demo package:
 
 1. Extract the **entire package** to a writable local folder, preserving its directories. Copying only the executable will not work.
-2. Open its `Windows` folder and launch **`DarkRelicSmoke.exe`**. Despite its name, launching this executable normally starts the playable demo.
+2. If included, double-click **`Play Dark Relic.cmd`**, which selects the verified DirectX 11 configuration. Otherwise use the PowerShell command below in the `Windows` folder. Despite its name, `DarkRelicSmoke.exe` normally starts the playable demo.
 3. Use the controls above; press Escape to quit.
 
 The packaged demo does not require opening Unreal Editor. If Windows reports a missing runtime, use the Unreal prerequisite installer if included with the supplied package. The tested rendering path is **DirectX 11 at 1920 × 1080**. For that windowed configuration, run this from the package's `Windows` folder in PowerShell:
@@ -108,7 +108,7 @@ Do not add `-DarkRelicSmoke` or `-DarkRelicCapture` for normal play: those are a
 
 ### Get the gameplay source
 
-The default **`main` branch contains the gameplay source, Unreal integration scripts, and documentation** delivered through [PR #1](https://github.com/marlandoj/dark-relic-hackathon-kit/pull/1) and [PR #2](https://github.com/marlandoj/dark-relic-hackathon-kit/pull/2).
+The default **`main` branch contains the gameplay source, Unreal integration scripts, and documentation** from merged PRs #1–#7, including the final-day enhancements, Warden abilities, Fury aura, and player/enemy feedback. The integration source matches the latest verified Enemy Feedback package.
 
 ```bash
 git clone https://github.com/marlandoj/Dark-Relic.git
@@ -127,10 +127,10 @@ The integration was developed with **Unreal Engine 5.8.1**, a Windows C++ build 
 1. Work in a disposable copy of your prepared Unreal project. Acquire required assets through their providers and preserve their licensing records.
 2. Copy `Plugins/DarkRelicCore` from `main` into the project's `Plugins` directory. Back up any existing plugin first.
 3. Enable **Dark Relic Core**, generate project files, and compile the host project's **Development Editor / Win64** target. A Blueprint-only host needs a native C++ target.
-4. Follow [Character integration](https://github.com/marlandoj/dark-relic-hackathon-kit/blob/main/CHARACTER-INTEGRATION.md) for the prepared map, asset bindings, validation, and packaging. The character map is `/Game/WidowfenPrep/LVL_DarkRelicCharacters`.
+4. Follow [Character integration](https://github.com/marlandoj/Dark-Relic/blob/main/CHARACTER-INTEGRATION.md) for the prepared map, asset bindings, validation, and packaging. The character map is `/Game/WidowfenPrep/LVL_DarkRelicCharacters`.
 5. Validate the scene in the editor, then package for Windows and verify the standalone executable.
 
-**The `integration/` scripts contain project-specific Windows paths and require already imported maps and assets. They are not blank-project installers.** Review paths, prerequisites, and existing build receipts before use. The older [Windows integration guide](https://github.com/marlandoj/dark-relic-hackathon-kit/blob/main/WINDOWS-INTEGRATION.md) describes the original component-wiring route; its pending-build statements predate the current character-build verification.
+**The `integration/` scripts contain project-specific Windows paths and require already imported maps and assets. They are not blank-project installers.** Review paths, prerequisites, and existing build receipts before use. The older [Windows integration guide](https://github.com/marlandoj/Dark-Relic/blob/main/WINDOWS-INTEGRATION.md) describes the original component-wiring route; its pending-build statements predate the current character-build verification.
 
 ## Repository guide
 
@@ -151,11 +151,11 @@ The Unreal adapter consumes the portable rules, so core checks exercise the same
 
 ## Build status
 
-Recorded enhancement-candidate evidence as of **September 12, 2026**:
+Recorded latest-candidate evidence as of **September 12, 2026**:
 
-- **105 portable gameplay checks** passed, including an AddressSanitizer/UndefinedBehaviorSanitizer run.
+- **155 portable gameplay checks** passed. The delivered candidate also passed AddressSanitizer/UndefinedBehaviorSanitizer verification.
 - Unreal compilation, character bindings, packaging, and rendered captures completed successfully.
-- **33 editor runtime checks and 33 packaged runtime checks** passed with exit code 0, including the new Bellkeeper and feedback behaviors. These are automated checks, not human playthroughs.
+- **89 editor runtime checks and 89 packaged runtime checks** passed with exit code 0, including Bellkeeper, Warden abilities, Fury, recoil and vocal playback. These are automated checks, not human playthroughs.
 - A separate normal-play session exited cleanly through Escape.
 - CSV profiling captured frames but returned **777003 during shutdown** with both audio enabled and disabled. The bounded investigation is parked. Human play/feel review and full performance acceptance remain pending.
 
@@ -167,4 +167,4 @@ The character build uses **Epic Games' Paragon Greystone and Paragon Minions**, 
 
 This repository publishes project source, documentation, and the rendered gameplay screenshot above. It does **not** redistribute marketplace meshes, animations, textures, the complete Unreal Content folder, or the generated source asset library. Obtain those dependencies from their providers and retain their terms and receipts.
 
-Marketplace receipt export and final submission-license verification remain outstanding in the project records. See [Asset boundary](https://github.com/marlandoj/dark-relic-hackathon-kit/blob/main/ASSET-BOUNDARY.md). This README grants no license to third-party assets and does not assert that all submission rights have been cleared.
+Marketplace receipt export and final submission-license verification remain outstanding in the project records. Tripo generation and prior payment evidence are retained privately. See [asset boundary](ASSET-BOUNDARY.md), [credits](CREDITS.md), and [submission preparation](SUBMISSION.md). This README grants no license to third-party assets and does not assert that all submission rights have been cleared.
