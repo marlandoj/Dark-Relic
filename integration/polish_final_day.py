@@ -26,6 +26,7 @@ try:
             light.set_editor_property('intensity', 1.0)
             light.set_light_color(unreal.LinearColor(0.90, 0.86, 0.76))
             light.set_editor_property('light_source_angle', 4.0)
+            light.set_editor_property('forward_shading_priority', 1)
         elif isinstance(actor, unreal.SkyLight):
             actor.light_component.set_editor_property('intensity', 1.1)
             actor.light_component.set_editor_property('light_color', unreal.Color(205, 211, 208, 255))
@@ -53,6 +54,8 @@ try:
     fill.light_component.set_editor_property('intensity', 0.8)
     fill.light_component.set_light_color(unreal.LinearColor(0.80, 0.84, 0.80))
     fill.light_component.set_editor_property('cast_shadows', False)
+    fill.light_component.set_editor_property('forward_shading_priority', 0)
+    fill.light_component.set_editor_property('atmosphere_sun_light', False)
     placements = [
         ('barrel_03', -1050, -250, 110), ('wooden_crate_01', 850, 100, 100),
         ('tree_stump_01', -1000, 450, 125), ('rock_moss_set_01', 850, 900, 135),
