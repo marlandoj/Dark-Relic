@@ -16,4 +16,13 @@ The `-DarkRelicAuraCapture` flag exercises the real Fury action and captures cha
 
 ## Validation
 
-155 portable checks pass, including smooth fade, expiry, invalid timer handling and run-end suppression. Windows compilation, cooked runtime and visual evidence are pending. Human aesthetic/playfeel approval remains pending.
+Delivered September 12, 2026 at 11:13 AM Arizona through the **Dark Relic Fury Aura** desktop shortcut, targeting `H:\DarkRelicAuraPackage\Windows\DarkRelicSmoke.exe`.
+
+- 155 portable checks pass, including an AddressSanitizer/UndefinedBehaviorSanitizer run.
+- Unreal compilation, persisted animation/material bindings and packaging pass.
+- 70 editor and 70 packaged runtime checks pass, including active aura intensity, animation playback and complete expiry shutdown.
+- Fresh packaged charge, peak, fade and off captures were inspected. The initial uniform shield was replaced with softer procedural wisps.
+- Ordinary R input played the Fury voice; Escape exited with code 0.
+- Eleven installed plugin files match source hashes; all 35 protected executable/container hashes across five earlier releases remain unchanged.
+
+The live encounter consumes the bound animation/material through R and its normal tick. No game/editor/build process remained at final verification. Human aesthetic/playfeel approval and broader submission acceptance remain pending; this is a delivered candidate, not a claim of AAA quality or a performance benchmark. Specialist advice/review routing ran in shadow mode with no independent model approval claimed.
