@@ -22,16 +22,20 @@ try:
         actor.modify()
         if isinstance(actor, unreal.DirectionalLight):
             light = actor.light_component
-            light.set_editor_property('intensity', 1.4)
-            light.set_editor_property('light_color', unreal.Color(221, 214, 198, 255))
+            light.modify()
+            light.set_editor_property('intensity', 1.0)
+            light.set_light_color(unreal.LinearColor(0.90, 0.86, 0.76))
             light.set_editor_property('light_source_angle', 4.0)
         elif isinstance(actor, unreal.SkyLight):
             actor.light_component.set_editor_property('intensity', 1.1)
             actor.light_component.set_editor_property('light_color', unreal.Color(205, 211, 208, 255))
         elif isinstance(actor, unreal.PointLight):
             light = actor.point_light_component
-            light.set_editor_property('light_color', unreal.Color(255, 204, 144, 255))
-            light.set_editor_property('intensity', 90.0)
+            light.modify()
+            light.set_light_color(unreal.LinearColor(1.0, 0.56, 0.24))
+            light.set_editor_property('use_temperature', True)
+            light.set_editor_property('temperature', 3800.0)
+            light.set_editor_property('intensity', 45.0)
             light.set_editor_property('source_radius', 35.0)
         elif isinstance(actor, unreal.ExponentialHeightFog):
             actor.component.set_editor_property('fog_density', 0.025)
@@ -44,6 +48,11 @@ try:
             settings.set_editor_property('override_motion_blur_amount', True)
             settings.set_editor_property('motion_blur_amount', 0.0)
             actor.set_editor_property('settings', settings)
+    fill = actors.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 1100), unreal.Rotator(-28, 135, 0))
+    fill.set_actor_label('Final Day Soft Character Fill')
+    fill.light_component.set_editor_property('intensity', 0.8)
+    fill.light_component.set_light_color(unreal.LinearColor(0.80, 0.84, 0.80))
+    fill.light_component.set_editor_property('cast_shadows', False)
     placements = [
         ('barrel_03', -1050, -250, 110), ('wooden_crate_01', 850, 100, 100),
         ('tree_stump_01', -1000, 450, 125), ('rock_moss_set_01', 850, 900, 135),
@@ -68,7 +77,7 @@ try:
     for x in [-450, 450]:
         light = actors.spawn_actor_from_class(unreal.PointLight, unreal.Vector(x, 1450, 160))
         light.set_actor_label('Final Day Ward Lantern ' + str(x))
-        light.point_light_component.set_editor_property('light_color', unreal.Color(255, 205, 145, 255))
+        light.point_light_component.set_light_color(unreal.LinearColor(1.0, 0.56, 0.24))
         light.point_light_component.set_editor_property('intensity', 220.0)
         light.point_light_component.set_editor_property('attenuation_radius', 600.0)
         light.point_light_component.set_editor_property('cast_shadows', False)
@@ -76,6 +85,12 @@ try:
         raise RuntimeError('Expected exactly one runtime encounter')
     if not levels.save_current_level() or not levels.load_level(target):
         raise RuntimeError('Enhanced map save/readback failed')
+    result['lighting'] = []
+    for actor in actors.get_all_level_actors():
+        if isinstance(actor, (unreal.DirectionalLight, unreal.PointLight)):
+            component = actor.light_component if isinstance(actor, unreal.DirectionalLight) else actor.point_light_component
+            color = component.get_editor_property('light_color')
+            result['lighting'].append({'label': actor.get_actor_label(), 'intensity': component.get_editor_property('intensity'), 'rgb': [color.r, color.g, color.b]})
     unreal.EditorLoadingAndSavingUtils.save_dirty_packages(True, True)
     result.update(passed=True, map=target, actors=len(actors.get_all_level_actors()))
 except Exception:
