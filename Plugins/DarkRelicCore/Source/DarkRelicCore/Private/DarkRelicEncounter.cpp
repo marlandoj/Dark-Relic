@@ -24,6 +24,7 @@
 #include "Engine/SkeletalMesh.h"
 #include "UnrealClient.h"
 #include "Sound/SoundWaveProcedural.h"
+#include "Sound/SoundBase.h"
 #include "Components/AudioComponent.h"
 #include "Camera/CameraComponent.h"
 
@@ -104,8 +105,61 @@ void ADarkRelicEncounter::PlayCue(float Frequency, float Duration, float Gain, i
     if (Component) { FDarkRelicTimedSound Sound; Sound.Component=Component; Sound.Remaining=Duration+0.05f; ActiveSounds.Add(Sound); }
 }
 
+void ADarkRelicEncounter::PlayHeroVoice(EDarkRelicVoice Event)
+{
+    const auto* Binding=HeroVoices.FindByPredicate([Event](const FDarkRelicVoiceBinding& B){ return B.Event==Event && B.Sound; });
+    if (!Binding) return;
+    const bool Pain=Event==EDarkRelicVoice::Pain || Event==EDarkRelicVoice::HeavyPain;
+    if (Pain && PainVoiceCooldown>0) return;
+    if (Pain) PainVoiceCooldown=0.18f;
+    LastVoice=Event; ++VoiceCount;
+    VoiceRemaining=FMath::Clamp(Binding->Sound->GetDuration()+0.1f,0.2f,5.f);
+    if (!FParse::Param(FCommandLine::Get(),TEXT("nosound")))
+    {
+        if (!IsValid(HeroVoiceComponent))
+        {
+            HeroVoiceComponent=NewObject<UAudioComponent>(this);
+            HeroVoiceComponent->bAutoActivate=false;
+            HeroVoiceComponent->bAutoDestroy=false;
+            HeroVoiceComponent->bIsUISound=true;
+            HeroVoiceComponent->bAllowSpatialization=false;
+            HeroVoiceComponent->RegisterComponent();
+        }
+        HeroVoiceComponent->Stop();
+        HeroVoiceComponent->SetSound(Binding->Sound);
+        HeroVoiceComponent->SetVolumeMultiplier(FMath::Clamp(VoiceVolume,0.f,2.f));
+        HeroVoiceComponent->Play();
+    }
+    UE_LOG(LogTemp,Display,TEXT("DARK_RELIC_VOICE event=%d sound=%s playing=%d"),static_cast<int32>(Event),*Binding->Sound->GetPathName(),IsValid(HeroVoiceComponent) && HeroVoiceComponent->IsPlaying());
+}
+
+bool ADarkRelicEncounter::DamagePlayer(float Amount, const FVector& Source, bool Heavy)
+{
+    if (!IsValid(Player) || !Run->ReceiveDamage(Amount)) return false;
+    HitFlash=0.25f;
+    Impact(Player->GetActorLocation(),Heavy);
+    if (Run->GetSnapshot().Phase==EDarkRelicPhase::Dead) return true;
+    RecoilDirection=(Player->GetActorLocation()-Source).GetSafeNormal2D();
+    if (RecoilDirection.IsNearlyZero()) RecoilDirection=-Player->GetActorForwardVector().GetSafeNormal2D();
+    RecoilRemaining=0.16f;
+    ++RecoilCount;
+    PlayHeroVoice(Heavy ? EDarkRelicVoice::HeavyPain : EDarkRelicVoice::Pain);
+    return true;
+}
+
+void ADarkRelicEncounter::TickRecoil(float Dt)
+{
+    if (!IsValid(Player) || RecoilRemaining<=0 || Dt<=0) return;
+    float Step=FMath::Min(Dt,RecoilRemaining);
+    RecoilRemaining=FMath::Max(0.f,RecoilRemaining-Step);
+    FHitResult Hit;
+    Player->AddActorWorldOffset(RecoilDirection*FMath::Clamp(HitRecoilDistance,0.f,100.f)*(Step/0.16f),true,&Hit);
+    if (Hit.bBlockingHit) RecoilRemaining=0;
+}
+
 void ADarkRelicEncounter::EndPlay(const EEndPlayReason::Type Reason)
 {
+    if (IsValid(HeroVoiceComponent)) { HeroVoiceComponent->Stop(); HeroVoiceComponent->DestroyComponent(); }
     for (auto& Sound : ActiveSounds) if (IsValid(Sound.Component)) { Sound.Component->Stop(); Sound.Component->DestroyComponent(); }
     ActiveSounds.Empty();
     if (IsValid(Player)) if (auto* Camera=Player->FindComponentByClass<UCameraComponent>()) Camera->ClearAdditiveOffset();
@@ -123,6 +177,9 @@ void ADarkRelicEncounter::Impact(const FVector& Position, bool Heavy)
 
 void ADarkRelicEncounter::FeedbackTick(float Dt)
 {
+    PainVoiceCooldown=FMath::Max(0.f,PainVoiceCooldown-Dt);
+    VoiceRemaining=FMath::Max(0.f,VoiceRemaining-Dt);
+    if (VoiceRemaining<=0 && IsValid(HeroVoiceComponent)) HeroVoiceComponent->Stop();
     for (int32 I=ActiveSounds.Num()-1;I>=0;--I)
     {
         ActiveSounds[I].Remaining-=Dt;
@@ -148,6 +205,12 @@ void ADarkRelicEncounter::FeedbackTick(float Dt)
     const auto S=Run->GetSnapshot();
     const bool Live=S.Phase==EDarkRelicPhase::Running || S.Phase==EDarkRelicPhase::Extracting;
     if (!Live) return;
+    TickRecoil(Dt);
+    if (HealingVoicePending && S.Action!=EDarkRelicAction::Heal)
+    {
+        HealingVoicePending=false;
+        if (S.Health>HealingStartHealth) PlayHeroVoice(EDarkRelicVoice::Healed);
+    }
     FootstepRemaining-=Dt;
     if (Player->GetVelocity().Size2D()>80 && Player->GetCharacterMovement()->IsMovingOnGround() && FootstepRemaining<=0)
     { PlayCue(95,0.12f,0.10f,2); FootstepRemaining=0.34f; }
@@ -196,6 +259,18 @@ bool ADarkRelicEncounter::InitializePlayer()
     auto* PC = UGameplayStatics::GetPlayerController(this, 0);
     Player = PC ? Cast<ACharacter>(PC->GetPawn()) : nullptr;
     if (!Player) return false;
+    if (RequireHeroVoices)
+    {
+        bool Valid=true;
+        for (int32 I=0;I<=static_cast<int32>(EDarkRelicVoice::Cheer);++I)
+            Valid &= HeroVoices.ContainsByPredicate([I](const FDarkRelicVoiceBinding& B){ return static_cast<int32>(B.Event)==I && B.Sound && B.Sound->GetDuration()>0; });
+        if (!Valid)
+        {
+            UE_LOG(LogTemp,Error,TEXT("DARK_RELIC_VOICE_BINDINGS_INVALID"));
+            if (Smoke) { SmokeCheck(TEXT("required cooked hero voices are present"),false); FinishSmoke(); }
+            return false;
+        }
+    }
     if (RequireCharacterVisuals && (!ValidVisuals(HeroVisuals) || EnemyVisuals.Num()!=3 ||
         EnemyVisuals.ContainsByPredicate([](const FDarkRelicCharacterVisuals& V){return !ValidVisuals(V);}) ||
         !HeroVisuals.HeavyAttack || !HeroVisuals.Dodge))
@@ -283,6 +358,9 @@ void ADarkRelicEncounter::ResetEncounter()
 void ADarkRelicEncounter::Restart()
 {
     if (!Player || !Run->StartRun()) return;
+    RecoilRemaining=0; RecoilDirection=FVector::ZeroVector;
+    PainVoiceCooldown=0; VoiceRemaining=0; HealingVoicePending=false;
+    if (IsValid(HeroVoiceComponent)) HeroVoiceComponent->Stop();
     AttackRemaining = 0;
     HeroAnimationRemaining = 0;
     AttackBurst=false; AttackFinisher=false; BurstVisualRemaining=0;
@@ -302,6 +380,8 @@ void ADarkRelicEncounter::Restart()
 
 void ADarkRelicEncounter::EndRun(bool Escaped)
 {
+    RecoilRemaining=0; HealingVoicePending=false;
+    PlayHeroVoice(Escaped ? EDarkRelicVoice::Cheer : EDarkRelicVoice::Death);
     AttackRemaining = 0;
     BurstVisualRemaining=0;
     if (Escaped)
@@ -322,6 +402,7 @@ void ADarkRelicEncounter::Attack(bool Heavy)
     const auto S=Run->GetSnapshot();
     AttackFinisher=S.Finisher; AttackBurst=false;
     Heavy=Heavy || AttackFinisher;
+    PlayHeroVoice(Heavy ? EDarkRelicVoice::Heavy : EDarkRelicVoice::Light);
     AttackRemaining = S.ActionRemaining * (Heavy ? 0.47f : 0.36f);
     AttackDamage = S.AttackDamage;
     AttackHeavy = Heavy;
@@ -348,6 +429,7 @@ void ADarkRelicEncounter::RelicBurst()
     const auto S=Run->GetSnapshot();
     AttackRemaining=S.ActionRemaining*0.5f; AttackDamage=S.AttackDamage;
     AttackHeavy=true; AttackBurst=true; AttackFinisher=false;
+    PlayHeroVoice(EDarkRelicVoice::Burst);
     HeroAnimationRemaining=S.ActionRemaining*0.94f;
     PlayCharacterAction(Player,HeroVisuals.HeavyAttack,HeroAnimationRemaining);
     PlayCue(440,0.35f,0.12f);
@@ -359,17 +441,22 @@ void ADarkRelicEncounter::Rally()
     if (!Run->TryAction(EDarkRelicAction::Rally))
     { Notify(TEXT("Warden fury unavailable: wait for recovery/cooldown; requires 20 stamina.")); return; }
     PlayCue(165,0.7f,0.12f); PlayCue(330,0.5f,0.08f);
+    PlayHeroVoice(EDarkRelicVoice::Fury);
     Notify(TEXT("WARDEN FURY: stronger attacks, reduced incoming damage"));
 }
 
 void ADarkRelicEncounter::Heal()
 {
-    if (!Run->TryAction(EDarkRelicAction::Heal)) Notify(TEXT("Healing unavailable: check charges, health and recovery."));
+    if (!Run->TryAction(EDarkRelicAction::Heal)) { Notify(TEXT("Healing unavailable: check charges, health and recovery.")); return; }
+    HealingVoicePending=true; HealingStartHealth=Run->GetSnapshot().Health;
+    PlayHeroVoice(EDarkRelicVoice::Heal);
 }
 
 void ADarkRelicEncounter::Dodge()
 {
-    if (!Run->TryAction(EDarkRelicAction::Dodge) || !Player) return;
+    if (!Player || !Run->TryAction(EDarkRelicAction::Dodge)) return;
+    RecoilRemaining=0;
+    PlayHeroVoice(EDarkRelicVoice::Dodge);
     FVector Direction = Player->GetLastMovementInputVector().GetSafeNormal2D();
     if (Direction.IsNearlyZero()) Direction = Player->GetActorForwardVector();
     Player->LaunchCharacter(Direction * 800 + FVector(0,0,80), true, true);
@@ -518,7 +605,7 @@ void ADarkRelicEncounter::Tick(float Dt)
                     FHitResult Hit; FCollisionQueryParams Query; Query.AddIgnoredActor(E.Actor);
                     bool Blocked=GetWorld()->LineTraceSingleByChannel(Hit,E.AreaCenter,Player->GetActorLocation(),ECC_Visibility,Query);
                     FVector Delta=Player->GetActorLocation()-E.AreaCenter;
-                    if (E.BellAttack.hits(Delta.Size2D(),Delta.Z,!Blocked || Hit.GetActor()==Player) && Run->ReceiveDamage(E.BellAttack.damage())) HitFlash=0.25f;
+                    if (E.BellAttack.hits(Delta.Size2D(),Delta.Z,!Blocked || Hit.GetActor()==Player)) DamagePlayer(E.BellAttack.damage(),E.AreaCenter,true);
                     Impact(E.AreaCenter,true); ++AreaAttackCount;
                     E.Cooldown=E.BellAttack.enraged ? 0.9f : 1.4f;
                 }
@@ -542,8 +629,8 @@ void ADarkRelicEncounter::Tick(float Dt)
                 {
                     FHitResult Hit; FCollisionQueryParams Query; Query.AddIgnoredActor(E.Actor);
                     bool Blocked = GetWorld()->LineTraceSingleByChannel(Hit,E.Actor->GetActorLocation(),Player->GetActorLocation(),ECC_Visibility,Query);
-                    if (Distance < Range+30 && (!Blocked || Hit.GetActor() == Player) && Run->ReceiveDamage(E.Role == 2 ? 30 : 14))
-                    { HitFlash = 0.25f; Impact(Player->GetActorLocation(),E.Role==2); }
+                    if (Distance < Range+30 && (!Blocked || Hit.GetActor() == Player))
+                        DamagePlayer(E.Role == 2 ? 30 : 14,E.Actor->GetActorLocation(),E.Role==2);
                     E.Cooldown = E.Role == 2 ? (E.BellAttack.enraged ? 1.f : 1.4f) : 1.8f;
                 }
             }
@@ -608,11 +695,16 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
         Player->TeleportTo(FVector(-950,50,110),FRotator::ZeroRotator,false,true); Interact();
         SmokeCheck(TEXT("spatial pickup reaches production rules"),Run->GetSnapshot().Carried[0]==1);
         Run->ReceiveDamage(30); Heal(); SmokeStage=1;
+        if (RequireHeroVoices) SmokeCheck(TEXT("healing start voice is bound and requested"),LastVoice==EDarkRelicVoice::Heal && VoiceCount>0);
     }
     else if (SmokeStage == 1 && S.Action == EDarkRelicAction::None)
     {
         SmokeCheck(TEXT("world tick completes healing"),S.Health==S.MaxHealth && S.Heals==1);
+        if (RequireHeroVoices) SmokeCheck(TEXT("healing completion voice follows restored health"),LastVoice==EDarkRelicVoice::Healed);
         Dodge(); SmokeCheck(TEXT("dodge blocks live damage"),!Run->ReceiveDamage(25));
+        const int32 BeforeVoice=VoiceCount; const int32 BeforeRecoil=RecoilCount;
+        SmokeCheck(TEXT("dodged enemy hit emits no pain or recoil"),!DamagePlayer(14,Player->GetActorLocation()-FVector(100,0,0)) && VoiceCount==BeforeVoice && RecoilCount==BeforeRecoil && RecoilRemaining==0);
+        if (RequireHeroVoices) SmokeCheck(TEXT("successful dodge vocalizes"),LastVoice==EDarkRelicVoice::Dodge);
         SmokeStage=2;
     }
     else if (SmokeStage == 2 && S.Action == EDarkRelicAction::None)
@@ -621,12 +713,14 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
         Player->TeleportTo(FVector(-300,-200,110),FRotator::ZeroRotator,false,true);
         Enemies[0].Actor->TeleportTo(FVector(-160,-200,110),FRotator(0,180,0),false,true);
         Attack(false); SmokeStage=10;
+        if (RequireHeroVoices) SmokeCheck(TEXT("light strike vocalizes"),LastVoice==EDarkRelicVoice::Light);
         if(RequireCharacterVisuals) SmokeCheck(TEXT("light attack plays Greystone sequence"),Player->GetMesh()->GetSingleNodeInstance()->GetCurrentAsset()==HeroVisuals.LightAttack);
     }
     else if(SmokeStage==10 && S.Action==EDarkRelicAction::None)
     {
         SmokeCheck(TEXT("light attack contacts enemy in world"),Enemies[0].Health==35);
         Attack(true); SmokeStage=11;
+        if (RequireHeroVoices) SmokeCheck(TEXT("heavy strike vocalizes"),LastVoice==EDarkRelicVoice::Heavy);
         if(RequireCharacterVisuals) SmokeCheck(TEXT("heavy attack plays Greystone sequence"),Player->GetMesh()->GetSingleNodeInstance()->GetCurrentAsset()==HeroVisuals.HeavyAttack);
     }
     else if(SmokeStage==11 && S.Action==EDarkRelicAction::None)
@@ -638,6 +732,8 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
     else if(SmokeStage==13 && S.Health<S.MaxHealth)
     {
         SmokeCheck(TEXT("enemy telegraph resolves into real damage"),S.Health==S.MaxHealth-14);
+        SmokeCheck(TEXT("live enemy hit starts directional recoil"),RecoilCount>0 && RecoilRemaining>0 && !RecoilDirection.IsNearlyZero());
+        if (RequireHeroVoices) SmokeCheck(TEXT("live enemy hit vocalizes pain"),LastVoice==EDarkRelicVoice::Pain);
         Enemies[1].Cooldown=100; Enemies[1].Windup=0;
         Enemies[1].Actor->TeleportTo(Enemies[1].Home,FRotator::ZeroRotator,false,true);
         Player->TeleportTo(FVector(-100,700,120),FRotator::ZeroRotator,false,true); Interact();
@@ -676,6 +772,7 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
     else if (SmokeStage==18 && AreaAttackCount==3)
     {
         SmokeCheck(TEXT("standing in enraged boss area deals one hit"),Run->GetSnapshot().Health==SmokeAreaHealth-34);
+        if (RequireHeroVoices) SmokeCheck(TEXT("boss area hit vocalizes heavy pain"),LastVoice==EDarkRelicVoice::HeavyPain);
         SmokeCheck(TEXT("landed attacks emit impact feedback"),ImpactCount>=5);
         for (auto& E : Enemies) { E.Cooldown=100; E.Windup=0; E.BellAttack.cancel(); E.BellAttack.cooldown=100; }
         Enemies[2].Health=500; Enemies[2].MaxHealth=500;
@@ -697,12 +794,14 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
     {
         SmokeCheck(TEXT("combo second hit damages live boss"),Enemies[2].Health==450);
         Attack(false); SmokeStage=33;
+        if (RequireHeroVoices) SmokeCheck(TEXT("Sunder finisher uses heavy effort voice"),LastVoice==EDarkRelicVoice::Heavy);
         SmokeCheck(TEXT("finisher uses production rules and Greystone heavy sequence"),Run->GetSnapshot().Finisher && AttackDamage==50 && (!RequireCharacterVisuals || Player->GetMesh()->GetSingleNodeInstance()->GetCurrentAsset()==HeroVisuals.HeavyAttack));
     }
     else if (SmokeStage==33 && S.Action==EDarkRelicAction::None)
     {
         SmokeCheck(TEXT("finisher resolves exactly once"),Enemies[2].Health==400);
         Rally(); SmokeStage=34;
+        if (RequireHeroVoices) SmokeCheck(TEXT("Fury power-up vocalizes"),LastVoice==EDarkRelicVoice::Fury);
         SmokeCheck(TEXT("fury input reaches live component"),Run->GetSnapshot().RallyRemaining>0 && Run->GetSnapshot().RallyCooldown>0);
         SmokeAbilityHealth=Run->GetSnapshot().Health;
         Run->ReceiveDamage(20);
@@ -713,6 +812,7 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
         Enemies[1].Health=200; Enemies[1].MaxHealth=200;
         Enemies[1].Actor->TeleportTo(FVector(-600,-200,110),FRotator::ZeroRotator,false,true);
         RelicBurst(); SmokeStage=35;
+        if (RequireHeroVoices) SmokeCheck(TEXT("Relic Burst vocalizes"),LastVoice==EDarkRelicVoice::Burst);
         SmokeCheck(TEXT("burst starts buffed damage and cooldown"),AttackBurst && FMath::IsNearlyEqual(AttackDamage,60.75f) && Run->GetSnapshot().BurstCooldown>0);
     }
     else if (SmokeStage==35 && S.Action==EDarkRelicAction::None)
@@ -722,7 +822,9 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
         SmokeCheck(TEXT("relic cast produces visible pulse while fury is active"),BurstVisualRemaining>0 && S.RallyRemaining>0);
         if (!FParse::Param(FCommandLine::Get(),TEXT("NullRHI"))) FScreenshotRequest::RequestScreenshot(FPaths::ProjectDir()/TEXT("IntegrationEvidence/warden-abilities-frame.png"),true,false);
         const float Before=Enemies[2].Health;
+        const int32 BeforeVoice=VoiceCount;
         RelicBurst(); Rally();
+        SmokeCheck(TEXT("rejected cooldown actions do not vocalize"),VoiceCount==BeforeVoice);
         SmokeCheck(TEXT("cooldown rejects repeat cast without pending hit"),Run->GetSnapshot().Action==EDarkRelicAction::None && AttackRemaining<=0 && Enemies[2].Health==Before);
         SmokeStage=36;
     }
@@ -730,6 +832,28 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
     {
         SmokeAbilityHealth=S.Health; Run->ReceiveDamage(4);
         SmokeCheck(TEXT("fury expiry restores incoming damage"),FMath::IsNearlyEqual(Run->GetSnapshot().Health,SmokeAbilityHealth-4));
+        Player->GetCharacterMovement()->StopMovementImmediately();
+        const FVector Start=Player->GetActorLocation();
+        PainVoiceCooldown=0;
+        DamagePlayer(1,Start-FVector(100,0,0));
+        TickRecoil(0.16f);
+        const FVector Delta=Player->GetActorLocation()-Start;
+        SmokeCheck(TEXT("hit recoil moves 55 cm away without vertical launch"),FMath::IsNearlyEqual(Delta.X,HitRecoilDistance,1.f) && FMath::Abs(Delta.Y)<1 && FMath::Abs(Delta.Z)<1 && RecoilRemaining==0);
+        auto* Wall=GetWorld()->SpawnActor<AStaticMeshActor>(Player->GetActorLocation()+FVector(65,0,0),FRotator::ZeroRotator);
+        Wall->GetStaticMeshComponent()->SetMobility(EComponentMobility::Movable);
+        Wall->GetStaticMeshComponent()->SetStaticMesh(LoadObject<UStaticMesh>(nullptr,TEXT("/Engine/BasicShapes/Cube.Cube")));
+        Wall->SetActorScale3D(FVector(0.1f,3,4));
+        Wall->GetStaticMeshComponent()->SetCollisionProfileName(TEXT("BlockAll"));
+        const FVector WallStart=Player->GetActorLocation();
+        DamagePlayer(1,WallStart-FVector(100,0,0)); TickRecoil(0.16f);
+        const float WallTravel=Player->GetActorLocation().X-WallStart.X;
+        SmokeCheck(TEXT("recoil sweep stops at a wall without penetration"),WallTravel>=0 && WallTravel<HitRecoilDistance-5 && RecoilRemaining==0);
+        Wall->Destroy();
+        if (RequireHeroVoices && !FParse::Param(FCommandLine::Get(),TEXT("nosound")))
+        {
+            PlayHeroVoice(EDarkRelicVoice::Heavy);
+            SmokeCheck(TEXT("packaged voice component starts real audio playback"),IsValid(HeroVoiceComponent) && HeroVoiceComponent->IsPlaying() && HeroVoiceComponent->Sound);
+        }
         SmokeStage=12;
     }
     else if (SmokeStage == 12)
@@ -746,14 +870,17 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
         SmokeCheck(TEXT("world tick completes extraction"),S.Credits>0 && S.Banked[3]==1);
         SmokeCheck(TEXT("escape clears all Warden ability state"),S.ComboStep==0 && S.RallyRemaining==0 && S.BurstCooldown==0 && S.RallyCooldown==0);
         SmokeCheck(TEXT("extraction bells and escape celebration triggered"),BellCount>0 && CelebrationRemaining>0);
+        if (RequireHeroVoices) SmokeCheck(TEXT("extraction success vocalizes"),LastVoice==EDarkRelicVoice::Cheer);
         auto* Fresh=NewObject<UDarkRelicRunComponent>(this); Fresh->SaveSlot=SmokeSlot;
         SmokeCheck(TEXT("fresh component reloads non-empty bank"),Fresh->LoadBank() && Fresh->GetSnapshot().Credits==S.Credits && Fresh->GetSnapshot().Banked[3]==1);
         SmokeCheck(TEXT("upgrade purchased from earned bank"),Run->BuyUpgrade());
         SmokeCheck(TEXT("upgraded bank saves"),Run->SaveBank());
         Restart(); Run->CollectLoot(EDarkRelicItem::Salt,1,99); Run->ReceiveDamage(10000);
         SmokeCheck(TEXT("death loses carried loot and keeps bank"),Run->GetSnapshot().Phase==EDarkRelicPhase::Dead && Run->GetSnapshot().Carried[2]==0 && Run->GetSnapshot().Banked[3]==1);
+        if (RequireHeroVoices) SmokeCheck(TEXT("death vocalizes and clears recoil"),LastVoice==EDarkRelicVoice::Death && RecoilRemaining==0);
         Restart(); SmokeCheck(TEXT("restart restores upgraded health"),Run->GetSnapshot().Health==Run->GetSnapshot().MaxHealth && Run->GetSnapshot().Upgrade==1);
         SmokeCheck(TEXT("new run resets Warden abilities"),Run->GetSnapshot().ComboStep==0 && Run->GetSnapshot().RallyRemaining==0 && Run->GetSnapshot().BurstCooldown==0);
+        SmokeCheck(TEXT("restart clears recoil healing and voice playback"),RecoilRemaining==0 && !HealingVoicePending && (!IsValid(HeroVoiceComponent) || !HeroVoiceComponent->IsPlaying()));
         FinishSmoke();
     }
 }
