@@ -56,8 +56,13 @@ The three enemy roles use distinct Paragon Minions character bindings. These are
 | **U** | Buy Resolve at the end of a run |
 | **R** | Restart after extraction or death |
 | **Escape** | Quit the game |
+| **M** | Toggle camera shake in the enhancement candidate |
 
 The current evasion uses Greystone's jump-start animation: an evasive hop, not a custom dodge roll. Keyboard and mouse are the documented controls.
+
+### Final-day enhancement candidate
+
+This branch adds softer Widowfen lighting, warm path lanterns, landed-hit sparks and sound, optional camera shake, procedural swamp ambience and footsteps, and escalating extraction bells and ward effects. The Bellkeeper marks a 360 cm area before striking; leave the ring or time your dodge. Below half health it becomes enraged, with faster movement and a shorter but still visible warning. See [enhancement behavior and validation boundaries](ENHANCEMENTS.md). Windows build and human playtest results must be verified before treating this candidate as the delivered demo.
 
 ### Loot and progression
 
@@ -95,8 +100,8 @@ Do not add `-DarkRelicSmoke` or `-DarkRelicCapture` for normal play: those are a
 The default **`main` branch contains the gameplay source, Unreal integration scripts, and documentation** delivered through [PR #1](https://github.com/marlandoj/dark-relic-hackathon-kit/pull/1) and [PR #2](https://github.com/marlandoj/dark-relic-hackathon-kit/pull/2).
 
 ```bash
-git clone https://github.com/marlandoj/dark-relic-hackathon-kit.git
-cd dark-relic-hackathon-kit
+git clone https://github.com/marlandoj/Dark-Relic.git
+cd Dark-Relic
 bash scripts/test-core.sh
 ```
 
