@@ -380,7 +380,8 @@ void ADarkRelicEncounter::BeginPlay()
     Smoke = FParse::Param(FCommandLine::Get(), TEXT("DarkRelicSmoke"));
     Capture = FParse::Param(FCommandLine::Get(), TEXT("DarkRelicCapture"));
     AuraCapture = FParse::Param(FCommandLine::Get(), TEXT("DarkRelicAuraCapture"));
-    if (Smoke)
+    PolishCapture = FParse::Param(FCommandLine::Get(), TEXT("DarkRelicPolishCapture"));
+    if (Smoke || PolishCapture)
     {
         SmokeSlot = TEXT("DarkRelicRuntimeSmoke_") + FGuid::NewGuid().ToString(EGuidFormats::Digits);
         Run->SaveSlot = SmokeSlot;
@@ -751,6 +752,38 @@ void ADarkRelicEncounter::Tick(float Dt)
                 FScreenshotRequest::RequestScreenshot(FPaths::ProjectDir()/FString::Printf(TEXT("IntegrationEvidence/aura-%s.png"),Names[I]),true,false);
         if (CaptureElapsed>9) FPlatformMisc::RequestExit(false);
     }
+    if (PolishCapture)
+    {
+        const float Previous=CaptureElapsed;
+        CaptureElapsed+=Dt;
+        for (auto& E : Enemies) { E.Cooldown=100; E.Windup=0; E.BellAttack.remaining=0; E.BellAttack.cooldown=100; }
+        auto Crossed=[&](float T){ return Previous<T && CaptureElapsed>=T; };
+        if (Crossed(1.4f)) Rally();
+        if (CaptureElapsed>=1.5f && CaptureElapsed<3.2f)
+        {
+            HitFlash=0.25f;
+            Enemies[2].AreaCenter=Player->GetActorLocation()+FVector(200,0,0);
+            Enemies[2].BellAttack.remaining=1.2f; Enemies[2].BellAttack.duration=1.6f;
+            Enemies[2].Actor->TeleportTo(Enemies[2].AreaCenter,FRotator::ZeroRotator,false,true);
+            Enemies[1].Actor->TeleportTo(Player->GetActorLocation()+FVector(350,200,0),FRotator::ZeroRotator,false,true);
+            Enemies[1].Windup=0.6f;
+        }
+        if (Crossed(3.5f)) Player->TeleportTo(ExtractionCenter,FRotator::ZeroRotator,false,true);
+        if (Crossed(5.5f)) Run->CollectLoot(EDarkRelicItem::Blackbell,1,777);
+        if (Crossed(7.5f)) Interact();
+        if (Crossed(11.5f)) { Run->BuyUpgrade(); }
+        if (Crossed(13.5f)) { Restart(); Run->ReceiveDamage(10000); }
+        const float Times[]={1.f,2.7f,4.5f,6.5f,8.2f,10.5f,12.5f,14.5f};
+        const TCHAR* Names[]={TEXT("neutral"),TEXT("warnings"),TEXT("ward-locked"),TEXT("ward-ready"),TEXT("extracting"),TEXT("victory"),TEXT("upgrade"),TEXT("death")};
+        for (int32 I=0;I<8;++I)
+            if (Crossed(Times[I])) FScreenshotRequest::RequestScreenshot(FPaths::ProjectDir()/FString::Printf(TEXT("IntegrationEvidence/polish-%s.png"),Names[I]),true,false);
+        if (CaptureElapsed>16)
+        {
+            UGameplayStatics::DeleteGameInSlot(SmokeSlot,0);
+            FPlatformMisc::RequestExit(false);
+        }
+        return;
+    }
     if(Capture)
     {
         float Previous=CaptureElapsed;
@@ -931,6 +964,34 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
     {
         SmokeCheck(TEXT("real player and HUD"),Player && UGameplayStatics::GetPlayerController(this,0)->GetHUD()->IsA<ADarkRelicHUD>());
         SmokeCheck(TEXT("three live enemies and four pickups"),Enemies.Num()==3 && Pickups.Num()==4);
+        ClearCues();
+        if (!FParse::Param(FCommandLine::Get(),TEXT("nosound")))
+        {
+            for(int32 I=0;I<16;++I) PlayCue(90,0.15f,0.001f,0,nullptr,dark_relic::CuePriority::Ambient);
+            const int32 Evicted=CueEvicted, Dropped=CueDropped;
+            FVector CuePosition=Enemies[1].Actor->GetActorLocation();
+            PlayCue(620,0.15f,0.001f,0,&CuePosition,dark_relic::CuePriority::Warning);
+            SmokeCheck(TEXT("saturated warning evicts ambient and remains bounded"),CueEvicted==Evicted+1 && ActiveSounds.Num()==16);
+            auto* Spatial=ActiveSounds.Last().Component.Get();
+            SmokeCheck(TEXT("positioned warning uses single spatial attenuation"),Spatial && Spatial->bAllowSpatialization && Spatial->bOverrideAttenuation && Spatial->AttenuationOverrides.bAttenuate && Spatial->GetComponentLocation().Equals(CuePosition,0.1));
+            PlayCue(90,0.15f,0.001f,0,nullptr,dark_relic::CuePriority::Ambient);
+            SmokeCheck(TEXT("ambient admission cannot evict equal or higher cues"),CueDropped==Dropped+1 && ActiveSounds.Num()==16);
+        }
+        ClearCues();
+        SmokeCheck(TEXT("cue reset destroys all active playback"),ActiveSounds.IsEmpty());
+        if (RequireHeroVoices)
+        {
+            PlayHeroVoice(EDarkRelicVoice::Death);
+            const int32 Before=VoiceCount;
+            PlayHeroVoice(EDarkRelicVoice::Light);
+            SmokeCheck(TEXT("terminal voice survives routine effort"),VoiceCount==Before && LastVoice==EDarkRelicVoice::Death);
+            VoiceRemaining=0;
+            PlayHeroVoice(EDarkRelicVoice::Pain);
+            PlayHeroVoice(EDarkRelicVoice::Dodge);
+            SmokeCheck(TEXT("pain voice survives routine dodge"),LastVoice==EDarkRelicVoice::Pain);
+            VoiceRemaining=0; PainVoiceCooldown=0;
+            if (IsValid(HeroVoiceComponent)) HeroVoiceComponent->Stop();
+        }
         if (RequireCharacterVisuals)
         {
             SmokeCheck(TEXT("Greystone mesh and live animation instance"),Player->GetMesh()->GetSkeletalMeshAsset()==HeroVisuals.Mesh && Player->GetMesh()->GetSingleNodeInstance()!=nullptr);
@@ -1192,6 +1253,7 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
     else if (SmokeStage == 4 && S.Phase == EDarkRelicPhase::Escaped)
     {
         SmokeCheck(TEXT("world tick completes extraction"),S.Credits>0 && S.Banked[3]==1);
+        SmokeCheck(TEXT("results reconcile run earnings"),RunEarnedCredits==S.Credits-RunStartingCredits && RunEarnedCredits>0);
         SmokeCheck(TEXT("escape clears all Warden ability state"),S.ComboStep==0 && S.RallyRemaining==0 && S.BurstCooldown==0 && S.RallyCooldown==0);
         SmokeCheck(TEXT("extraction bells and escape celebration triggered"),BellCount>0 && CelebrationRemaining>0);
         if (RequireHeroVoices) SmokeCheck(TEXT("extraction success vocalizes"),LastVoice==EDarkRelicVoice::Cheer);
@@ -1204,6 +1266,7 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
         if (RequireHeroVoices) SmokeCheck(TEXT("death vocalizes and clears recoil"),LastVoice==EDarkRelicVoice::Death && RecoilRemaining==0);
         Restart(); SmokeCheck(TEXT("restart restores upgraded health"),Run->GetSnapshot().Health==Run->GetSnapshot().MaxHealth && Run->GetSnapshot().Upgrade==1);
         SmokeCheck(TEXT("new run resets Warden abilities"),Run->GetSnapshot().ComboStep==0 && Run->GetSnapshot().RallyRemaining==0 && Run->GetSnapshot().BurstCooldown==0);
+        SmokeCheck(TEXT("restart clears run earnings and stale cast effects"),RunEarnedCredits==0 && HexImpactRemaining==0 && ActiveSounds.IsEmpty());
         SmokeCheck(TEXT("restart clears recoil healing and voice playback"),RecoilRemaining==0 && !HealingVoicePending && (!IsValid(HeroVoiceComponent) || !HeroVoiceComponent->IsPlaying()));
         for (const auto& E : Enemies) SmokeCheck(FString::Printf(TEXT("restart clears enemy %d feedback"),E.Role),E.RecoilRemaining==0 && E.VoiceCount==0 && !IsValid(E.VoiceComponent));
         FinishSmoke();

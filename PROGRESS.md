@@ -1,7 +1,19 @@
 # Dark Relic factory source lane
 
 status: in_progress
-watchdog: paused
+watchdog: active
+
+## Reviewer polish implementation (ZOU-1656–ZOU-1659)
+
+User accepted baseline human gameplay/audio and authorized these improvements. The primary chat owns Windows integration. Existing accepted packages and submission ZIP remain protected.
+
+- [x] Implement warning/result HUD, ward prompts and run-credit reconciliation
+- [x] Implement Hexbound tell and success-only impact without changing combat timing
+- [x] Implement audio priority and spatial cues; preserve existing voice assets
+- [x] Add bounded map polish script; no new marketplace assets
+- [x] Pass 169 portable checks
+- [ ] Compile, inspect and validate separate Windows polish candidate
+- [ ] Publish review and preserve release evidence
 
 ## Enemy hit reactions (ZOU-1646)
 
