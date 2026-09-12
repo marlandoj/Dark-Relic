@@ -350,9 +350,9 @@ bool ADarkRelicEncounter::InitializePlayer()
     if (RequireEnemyVoices)
     {
         bool Valid=EnemyVoices.Num()==3;
-        for (int32 Role=0;Role<3;++Role)
+        for (int32 EnemyRole=0;EnemyRole<3;++EnemyRole)
         {
-            const auto* B=EnemyVoices.FindByPredicate([Role](const FDarkRelicEnemyVoiceBinding& V){ return V.Role==Role; });
+            const auto* B=EnemyVoices.FindByPredicate([EnemyRole](const FDarkRelicEnemyVoiceBinding& V){ return V.Role==EnemyRole; });
             Valid &= B && B->PainSounds.Num()>=3;
             if (B) for (const auto& Sound : B->PainSounds) Valid &= Sound && Sound->GetDuration()>0;
         }

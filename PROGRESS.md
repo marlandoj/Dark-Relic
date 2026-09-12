@@ -1,7 +1,17 @@
 # Dark Relic factory source lane
 
-status: complete
-watchdog: off
+status: in_progress
+watchdog: active
+
+## Enemy hit reactions (ZOU-1646)
+
+- [x] Implement directional minion recoil and smaller Bellkeeper recoil
+- [x] Bind five rotating pain recordings per enemy role
+- [x] Pass 155 portable regression checks
+- [ ] Verify Unreal editor and packaged gameplay
+- [ ] Deliver isolated desktop candidate and source review
+
+Source work/enemy-feedback based on Fury Aura PR #6. Windows worker PID 23832 at H:\DarkRelicEnemyFeedbackDelivery-20260912\launcher.json; read job.json and H:\DarkRelicEnemyFeedback-20260912\IntegrationEvidence\enemy-build.json before retry. Previous release packages remain protected. Human listening/playfeel acceptance remains pending.
 
 ## Warden Fury transformation (ZOU-1644)
 
