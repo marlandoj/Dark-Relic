@@ -12,6 +12,7 @@ try:
     target = '/Game/WidowfenPrep/LVL_DarkRelicEnhanced'
     if not levels.load_level(target):
         raise RuntimeError('Verified enhanced map missing')
+    boundary_already_placed = any(a.get_actor_label().startswith('Review Polish Shallow Water ') for a in actors.get_all_level_actors())
     for actor in actors.get_all_level_actors():
         if actor.get_actor_label().startswith('Review Polish '):
             actors.destroy_actor(actor)
@@ -35,14 +36,14 @@ try:
                 pos.x = -1220.0 if pos.x < 0 else 1220.0
                 actor.set_actor_location(pos, False, False)
                 result['moved_decor'].append({'label': label, 'x': pos.x, 'y': pos.y})
-        if label.startswith(('Playable Polish Deadwood ', 'Playable Polish Branch ')):
+        if not boundary_already_placed and label.startswith(('Playable Polish Deadwood ', 'Playable Polish Branch ')):
             pos = actor.get_actor_location()
             if abs(pos.x) > 1550:
                 actor.modify()
                 pos.x *= 0.84
                 actor.set_actor_location(pos, False, False)
     material_path = '/Game/WidowfenPrep/Materials/M_ReviewShallowWater'
-    material = assets.load_asset(material_path)
+    material = assets.load_asset(material_path) if assets.does_asset_exist(material_path) else None
     if not material:
         material = unreal.AssetToolsHelpers.get_asset_tools().create_asset('M_ReviewShallowWater', '/Game/WidowfenPrep/Materials', unreal.Material, unreal.MaterialFactoryNew())
         ml = unreal.MaterialEditingLibrary
