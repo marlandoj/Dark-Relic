@@ -40,6 +40,16 @@ struct FDarkRelicTimedSound
     float Remaining = 0;
 };
 
+USTRUCT(BlueprintType)
+struct FDarkRelicEnemyVoiceBinding
+{
+    GENERATED_BODY()
+    UPROPERTY(EditAnywhere, BlueprintReadWrite) int32 Role = 0;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite) TArray<TObjectPtr<USoundBase>> PainSounds;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite) float Pitch = 0.85f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite) float Volume = 0.65f;
+};
+
 struct FDarkRelicImpact
 {
     FVector Position = FVector::ZeroVector;
@@ -78,6 +88,15 @@ struct FDarkRelicEnemy
     float AnimationRemaining = 0;
     dark_relic::BellkeeperAttack BellAttack;
     FVector AreaCenter = FVector::ZeroVector;
+    FVector RecoilDirection = FVector::ZeroVector;
+    float RecoilRemaining = 0;
+    float RecoilDistance = 0;
+    float PainCooldown = 0;
+    float VoiceRemaining = 0;
+    int32 VoiceCount = 0;
+    int32 RecoilCount = 0;
+    int32 LastPainIndex = -1;
+    UPROPERTY() TObjectPtr<UAudioComponent> VoiceComponent;
 };
 
 UCLASS()
@@ -114,6 +133,11 @@ public:
     void PlayHeroVoice(EDarkRelicVoice Event);
     bool DamagePlayer(float Amount, const FVector& Source, bool Heavy = false);
     void TickRecoil(float DeltaSeconds);
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Enemy Feedback") TArray<FDarkRelicEnemyVoiceBinding> EnemyVoices;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Enemy Feedback") bool RequireEnemyVoices = false;
+    void ReactEnemyHit(FDarkRelicEnemy& Enemy, const FVector& Source, bool Heavy);
+    void TickEnemyFeedback(FDarkRelicEnemy& Enemy, float DeltaSeconds);
+    void ClearEnemyFeedback(FDarkRelicEnemy& Enemy);
     UPROPERTY() TObjectPtr<ACharacter> Player;
     UPROPERTY() TArray<FDarkRelicEnemy> Enemies;
     UPROPERTY() TArray<TObjectPtr<AActor>> Pickups;

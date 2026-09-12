@@ -1,7 +1,17 @@
 # Dark Relic factory source lane
 
-status: complete
-watchdog: off
+status: in_progress
+watchdog: paused
+
+## Enemy hit reactions (ZOU-1646)
+
+- [x] Implement directional minion recoil and smaller Bellkeeper recoil
+- [x] Bind five rotating pain recordings per enemy role
+- [x] Pass 155 portable regression checks
+- [x] Verify Unreal editor and packaged gameplay
+- [x] Deliver isolated desktop candidate and source review
+
+Delivered September 12, 2026 at 12:44 PM Arizona. Built gameplay source b4d9884; Dark Relic Enemy Feedback desktop shortcut targets H:\DarkRelicEnemyFeedbackPackage\Windows\DarkRelicSmoke.exe. Compilation, bindings, packaging and captures exit 0; all 89 editor and 89 packaged runtime checks pass. Ordinary Escape exit 0, eleven source hashes match, all 42 protected release hashes are unchanged. No game/editor/build remains active. PR #7 stacks on Fury Aura PR #6. Human listening/playfeel acceptance remains pending.
 
 ## Warden Fury transformation (ZOU-1644)
 

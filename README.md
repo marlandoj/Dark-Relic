@@ -63,6 +63,8 @@ The current evasion uses Greystone's jump-start animation: an evasive hop, not a
 
 ### Warden abilities candidate
 
+The **enemy feedback candidate** adds directional minion knockback and varied pain grunts, plus smaller Bellkeeper recoil and deeper vocals. [Enemy reaction details and validation](ENEMY-FEEDBACK.md) describe the separate candidate.
+
 The **Fury aura candidate** adds an expressive power-up gesture, crimson-and-gold rim glow, rising embers and local lighting. The glow fades with the remaining Fury power. See [transformation behavior and validation](WARDEN-AURA.md) for the separate candidate's status.
 
 The **Warden feedback candidate** adds a short knockback on landed enemy hits and Greystone vocal reactions for strikes, dodges, relic powers, Fury, healing and pain. See [hit and voice feedback](WARDEN-FEEDBACK.md) for its separate build and validation status.
