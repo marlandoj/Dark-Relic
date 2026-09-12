@@ -12,6 +12,21 @@ class USkeletalMesh;
 class UAnimSequence;
 class UBlendSpace;
 class UAudioComponent;
+class USoundBase;
+
+UENUM(BlueprintType)
+enum class EDarkRelicVoice : uint8
+{
+    Pain, HeavyPain, Light, Heavy, Dodge, Burst, Fury, Heal, Healed, Death, Cheer
+};
+
+USTRUCT(BlueprintType)
+struct FDarkRelicVoiceBinding
+{
+    GENERATED_BODY()
+    UPROPERTY(EditAnywhere, BlueprintReadWrite) EDarkRelicVoice Event = EDarkRelicVoice::Pain;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite) TObjectPtr<USoundBase> Sound;
+};
 
 USTRUCT()
 struct FDarkRelicTimedSound
@@ -76,6 +91,25 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Characters") FDarkRelicCharacterVisuals HeroVisuals;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Characters") TArray<FDarkRelicCharacterVisuals> EnemyVisuals;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Characters") bool RequireCharacterVisuals = false;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Voice") TArray<FDarkRelicVoiceBinding> HeroVoices;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Voice") bool RequireHeroVoices = false;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Voice", meta=(ClampMin="0",ClampMax="2")) float VoiceVolume = 0.85f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Feedback", meta=(ClampMin="0",ClampMax="100")) float HitRecoilDistance = 55.f;
+    UPROPERTY() TObjectPtr<UAudioComponent> HeroVoiceComponent;
+    EDarkRelicVoice LastVoice = EDarkRelicVoice::Pain;
+    int32 VoiceCount = 0;
+    int32 RecoilCount = 0;
+    FVector RecoilDirection = FVector::ZeroVector;
+    float RecoilRemaining = 0;
+    float PainVoiceCooldown = 0;
+    float VoiceRemaining = 0;
+    bool HealingVoicePending = false;
+    float HealingStartHealth = 0;
+    FVector SmokeRecoilStart = FVector::ZeroVector;
+    int32 SmokeVoiceCount = 0;
+    void PlayHeroVoice(EDarkRelicVoice Event);
+    bool DamagePlayer(float Amount, const FVector& Source, bool Heavy = false);
+    void TickRecoil(float DeltaSeconds);
     UPROPERTY() TObjectPtr<ACharacter> Player;
     UPROPERTY() TArray<FDarkRelicEnemy> Enemies;
     UPROPERTY() TArray<TObjectPtr<AActor>> Pickups;
@@ -85,6 +119,10 @@ public:
     float AttackRemaining = 0;
     float AttackDamage = 0;
     bool AttackHeavy = false;
+    bool AttackBurst = false;
+    bool AttackFinisher = false;
+    float BurstVisualRemaining = 0;
+    FVector BurstCenter = FVector::ZeroVector;
     bool Smoke = false;
     bool SmokeFailed = false;
     bool Capture = false;
@@ -108,12 +146,15 @@ public:
     int32 BellCount = 0;
     int32 AreaAttackCount = 0;
     float SmokeAreaHealth = 0;
+    float SmokeAbilityHealth = 0;
     void PlayCue(float Frequency, float Duration, float Gain, int32 Texture = 0, const FVector* Position = nullptr);
     void FeedbackTick(float DeltaSeconds);
     void Impact(const FVector& Position, bool Heavy);
     UFUNCTION() void EndRun(bool Escaped);
     void Restart();
     void Attack(bool Heavy);
+    void RelicBurst();
+    void Rally();
     void Interact();
     void Heal();
     void Dodge();

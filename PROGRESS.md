@@ -1,7 +1,32 @@
 # Dark Relic factory source lane
 
-status: in_progress
-watchdog: paused
+status: complete
+watchdog: off
+
+## Warden hit and voice feedback (ZOU-1643)
+
+- [x] Add slight collision-swept recoil and 11 bound Greystone vocal events
+- [x] Pass 146 portable checks and 66 rendered, audio-enabled Unreal runtime checks
+- [x] Package and verify the standalone candidate: 66 checks and ordinary Escape exit 0
+- [x] Deliver separate desktop shortcut and verify all 21 protected package hashes
+
+Source 1219e0a, PR #5 stacked on #4. Windows project H:\DarkRelicFeedback-20260912, output H:\DarkRelicFeedbackPackage. Prior packages preserved. See WARDEN-FEEDBACK.md. Human playfeel acceptance remains pending.
+
+Delivered September 12, 2026 at 8:16 AM Arizona: Dark Relic Warden Feedback desktop shortcut, 11 cooked voice bindings, 66 editor and 66 packaged checks, clean foreground Escape exit, ten source hashes matched. All eleven vocal event types logged active playback. No runtime/build process remains. Specialist routing is shadow-only, not independent approval. No GitHub CI checks are configured for this branch; validation ran locally and on Windows.
+
+## Active Warden abilities (ZOU-1642)
+
+- [x] Implement Sunder combo, F Relic Burst, R Warden Fury in shared rules and live encounter
+- [x] Add readable HUD states and reuse existing animations/audio
+- [x] Pass 146 portable gameplay checks
+- [x] Compile and run 47 Unreal/packaged checks in separate candidate
+- [x] Verify rendered capture and candidate delivery
+
+Primary chat owns the authorized desktop integration. Source baseline dfbb3f8; managed worktree dark-relic-warden; Windows project H:\DarkRelicWarden-20260912 and package H:\DarkRelicWardenPackage. No previous release is replaced. Details: WARDEN-ABILITIES.md.
+
+Warden implementation and automated delivery verification completed September 12 at 7:41 AM Arizona. Built source 69f9f72: 146 portable checks, 47 editor and packaged runtime checks, compilation, bindings, package and capture pass. Fresh ordinary launch exits 0 through foreground Escape. Candidate shortcut and seven package hashes are recorded. Human acceptance remains pending in ZOU-1642; PR #4 is stacked on PR #3. Remaining older-sprint checkboxes below are historical or separate acceptance scope.
+
+Prior enhanced release receipt recovered: passed, Escape exit 0, protected original hashes unchanged, separate enhanced shortcut verified. The old desktop-access blocker below is historical.
 
 
 Final delivery verified at 6:07:54 AM Arizona: normal Escape exit 0, all seven original package hashes unchanged, seven candidate executable/container hashes recorded, and Dark Relic Enhanced Candidate desktop shortcut created and read back. Original shortcut preserved. All build/verification workers completed. Human end-to-end playtest remains pending; profiler ZOU-1633 and submission-license verification remain open.
@@ -21,6 +46,7 @@ Primary chat owns authorized Windows work. The historical source-only ownership 
 
 Final candidate add4728 passed compilation, bindings, 33 editor and packaged runtime checks, packaging and captures at 5:58 AM Arizona on September 12. The corrected game-view capture was inspected. 105 portable checks pass. Ordinary gameplay on the preceding candidate closes with exit 0. The final normal-exit/hash/shortcut verification was submitted, but desktop API timeouts prevent reading its result; inspect enhancement-release.json before any retry. CSV profiling still exits 777003 with audio enabled or disabled; its bounded diagnosis is parked in ZOU-1633. Human playtest remains outstanding.
 
+Historical desktop-receipt blocker resolved. Human end-to-end acceptance remains pending.
 
 ## Historical factory source delivery
 
