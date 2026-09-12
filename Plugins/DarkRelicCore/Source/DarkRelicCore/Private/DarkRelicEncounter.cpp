@@ -1435,6 +1435,9 @@ void ADarkRelicHUD::DrawHUD()
             DrawLine(P.X-R,P.Y+R,P.X+R,P.Y-R,FLinearColor(0.7f,0.8f,1),3*Scale);
         }
     }
+    TArray<FBox2D> UsedLabels;
+    UsedLabels.Add(FBox2D(FVector2D(24,66),FVector2D(559,S.InZone ? 371 : 283)));
+    UsedLabels.Add(FBox2D(FVector2D(Canvas->ClipX/Scale-380,66),FVector2D(Canvas->ClipX/Scale-24,S.ComboStep>0 ? 271 : 214)));
     for (const auto& E : Game->Enemies)
     {
         if (!IsValid(E.Actor)||E.Health<=0) continue;
@@ -1455,7 +1458,21 @@ void ADarkRelicHUD::DrawHUD()
         }
         FVector P=Project(E.Actor->GetActorLocation()+FVector(0,0,120));
         if(P.Z<=0) continue;
-        float X=P.X/Scale-65,Y=P.Y/Scale;
+        const float Width=Area ? 235.f : E.Role==2 ? 295.f : 210.f;
+        const float Height=Area ? 48.f : 38.f;
+        float X=FMath::Clamp(static_cast<float>(P.X/Scale)-65.f,32.f,Canvas->ClipX/Scale-Width-16.f);
+        float Y=FMath::Clamp(static_cast<float>(P.Y/Scale),50.f,Bottom-320.f);
+        for (int32 Pass=0;Pass<=UsedLabels.Num();++Pass)
+        {
+            bool Moved=false;
+            for (const FBox2D& Used : UsedLabels)
+                if (FBox2D(FVector2D(X-8,Y-4),FVector2D(X-8+Width,Y-4+Height)).Intersect(Used))
+                { Y=static_cast<float>(Used.Max.Y)+12.f; Moved=true; }
+            if (!Moved) break;
+        }
+        UsedLabels.Add(FBox2D(FVector2D(X-8,Y-4),FVector2D(X-8+Width,Y-4+Height)));
+        if (FMath::Abs(Y-static_cast<float>(P.Y/Scale))>32.f)
+            DrawLine(P.X,P.Y,(X+65)*Scale,(Y-6)*Scale,Text,Scale);
         const bool Hex=Game->HexTellVisible(E);
         if (Hex)
         {
@@ -1470,7 +1487,7 @@ void ADarkRelicHUD::DrawHUD()
                 DrawLine(Cast.X-R,Cast.Y,Cast.X,Cast.Y-R,Tell,3*Scale);
             }
         }
-        DrawRect(Ink,(X-8)*Scale,(Y-4)*Scale,(Area ? 235 : E.Role==2 ? 295 : 210)*Scale,(Area ? 48 : 38)*Scale);
+        DrawRect(Ink,(X-8)*Scale,(Y-4)*Scale,Width*Scale,Height*Scale);
         Label(Area ? TEXT("!  LEAVE THE RING") : Hex ? TEXT("!  HEX CAST: DODGE") : E.Windup>0 && E.Role!=1 ? TEXT("!  DODGE") : E.Role==2 ? (E.BellAttack.enraged ? TEXT("BELLKEEPER: ENRAGED") : TEXT("BELLKEEPER")) : E.Role==1 ? TEXT("HEXBOUND") : TEXT("DREG"),X,Y,0.75f,(Area||E.Windup>0)?Gold:Text);
         Bar(X,Y+22,130,8,E.Health/E.MaxHealth,Red);
         if (Area) Bar(X,Y+33,130,5,static_cast<float>(1-E.BellAttack.remaining/E.BellAttack.duration),Gold);
