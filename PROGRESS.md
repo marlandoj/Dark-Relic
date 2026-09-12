@@ -1,7 +1,19 @@
 # Dark Relic factory source lane
 
-status: complete
-watchdog: off
+status: in_progress
+watchdog: active
+
+## Final-day enhancement candidate (ZOU-1634)
+
+- [x] Preserve merged source and select isolated candidate paths
+- [x] Implement five priority enhancements in source
+- [x] Pass 105 portable checks including Bellkeeper timing, enrage and damage boundaries
+- [ ] Compile and apply the isolated enhanced map in Windows
+- [ ] Pass expanded packaged runtime smoke and inspect rendered output
+- [ ] Bound profiler diagnosis and record evidence
+- [ ] Human end-to-end playtest before submission readiness
+
+Primary chat owns authorized Windows work. The historical source-only ownership below is superseded. Replay variation remains stretch. Current candidate details: ENHANCEMENTS.md.
 
 - [x] Recover game scope and separate Windows ownership
 - [x] Resolve Unreal game specialists in shadow mode
