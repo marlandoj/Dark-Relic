@@ -587,6 +587,8 @@ void ADarkRelicEncounter::FinishSmoke()
 void ADarkRelicEncounter::SmokeTick(float Dt)
 {
     SmokeElapsed += Dt;
+    if (SmokeStage>=30 && SmokeStage<=36)
+        for (auto& E : Enemies) { E.Cooldown=100; E.Windup=0; E.BellAttack.cancel(); E.BellAttack.cooldown=100; }
     auto S = Run->GetSnapshot();
     if (SmokeElapsed > 65) { SmokeCheck(TEXT("runtime completed within deadline"),false); FinishSmoke(); return; }
     if (SmokeStage == 0 && SmokeElapsed > 1)
