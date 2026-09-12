@@ -293,6 +293,7 @@ void ADarkRelicEncounter::TickEnemyFeedback(FDarkRelicEnemy& E, float Dt)
 
 void ADarkRelicEncounter::EndPlay(const EEndPlayReason::Type Reason)
 {
+    UE_LOG(LogTemp,Display,TEXT("DARK_RELIC_AUDIO admitted=%d dropped=%d evicted=%d voiceDropped=%d"),CueAdmitted,CueDropped,CueEvicted,VoiceDropped);
     for (const auto& Mesh : FuryMeshes) if (IsValid(Mesh)) Mesh->DestroyComponent();
     FuryMeshes.Empty();
     if (IsValid(FuryLight)) FuryLight->DestroyComponent();
@@ -768,7 +769,7 @@ void ADarkRelicEncounter::Tick(float Dt)
             Enemies[1].Actor->TeleportTo(Player->GetActorLocation()+FVector(350,200,0),FRotator::ZeroRotator,false,true);
             Enemies[1].Windup=0.6f;
         }
-        if (Crossed(3.5f)) Player->TeleportTo(ExtractionCenter,FRotator::ZeroRotator,false,true);
+        if (Crossed(3.5f)) { Player->TeleportTo(ExtractionCenter,FRotator::ZeroRotator,false,true); Run->SetInExtractionZone(true); }
         if (Crossed(5.5f)) Run->CollectLoot(EDarkRelicItem::Blackbell,1,777);
         if (Crossed(7.5f)) Interact();
         if (Crossed(11.5f)) { Run->BuyUpgrade(); }
@@ -964,6 +965,29 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
     {
         SmokeCheck(TEXT("real player and HUD"),Player && UGameplayStatics::GetPlayerController(this,0)->GetHUD()->IsA<ADarkRelicHUD>());
         SmokeCheck(TEXT("three live enemies and four pickups"),Enemies.Num()==3 && Pickups.Num()==4);
+        const FVector HeroBefore=Player->GetActorLocation(), HexBefore=Enemies[1].Actor->GetActorLocation();
+        Player->TeleportTo(FVector(-300,-200,110),FRotator::ZeroRotator,false,true);
+        auto& Hex=Enemies[1];
+        Hex.Actor->TeleportTo(FVector(0,-200,110),FRotator::ZeroRotator,false,true);
+        Hex.Windup=0.8f;
+        SmokeCheck(TEXT("live ranged windup identifies visible caster"),HexTellVisible(Hex));
+        Hex.Windup=0;
+        SmokeCheck(TEXT("interrupted cast removes tell immediately"),!HexTellVisible(Hex));
+        Hex.Windup=0.8f; Hex.Health=0;
+        SmokeCheck(TEXT("dead caster cannot retain tell"),!HexTellVisible(Hex));
+        Hex.Health=Hex.MaxHealth;
+        Hex.Actor->TeleportTo(FVector(600,-200,110),FRotator::ZeroRotator,false,true);
+        SmokeCheck(TEXT("leaving ranged reach removes tell"),!HexTellVisible(Hex));
+        Hex.Actor->TeleportTo(FVector(0,-200,110),FRotator::ZeroRotator,false,true);
+        auto* Cover=GetWorld()->SpawnActor<AStaticMeshActor>(FVector(-150,-200,110),FRotator::ZeroRotator);
+        Cover->SetMobility(EComponentMobility::Movable);
+        Cover->GetStaticMeshComponent()->SetStaticMesh(LoadObject<UStaticMesh>(nullptr,TEXT("/Engine/BasicShapes/Cube.Cube")));
+        Cover->GetStaticMeshComponent()->SetCollisionProfileName(TEXT("BlockAll"));
+        SmokeCheck(TEXT("blocking cover removes ranged tell"),!HexTellVisible(Hex));
+        Cover->Destroy();
+        Hex.Windup=0;
+        Hex.Actor->TeleportTo(HexBefore,FRotator::ZeroRotator,false,true);
+        Player->TeleportTo(HeroBefore,FRotator::ZeroRotator,false,true);
         ClearCues();
         if (!FParse::Param(FCommandLine::Get(),TEXT("nosound")))
         {
@@ -1384,10 +1408,19 @@ void ADarkRelicHUD::DrawHUD()
         FVector Mark=Project(Game->ExtractionCenter+FVector(0,0,130));
         const float X=FMath::Clamp(static_cast<float>(Mark.X/Scale),600.f,Canvas->ClipX/Scale-440.f);
         const float Y=FMath::Clamp(static_cast<float>(Mark.Y/Scale),310.f,Canvas->ClipY/Scale-220.f);
-        if (Mark.Z>0)
+        if (Mark.Z>0 && Mark.X>=0 && Mark.X<=Canvas->ClipX)
         {
             DrawRect(Ink,(X-10)*Scale,(Y-5)*Scale,250*Scale,38*Scale);
             Label(FString::Printf(TEXT("WARD  %.0fm"),FVector::Dist2D(Game->Player->GetActorLocation(),Game->ExtractionCenter)/100),X,Y,0.85f,Gold);
+        }
+        else
+        {
+            const auto* PC=Cast<APlayerController>(Game->Player->GetController());
+            const FVector Right=PC ? FRotationMatrix(PC->GetControlRotation()).GetUnitAxis(EAxis::Y) : Game->Player->GetActorRightVector();
+            const bool TurnRight=FVector::DotProduct(Game->ExtractionCenter-Game->Player->GetActorLocation(),Right)>=0;
+            const float Center=Canvas->ClipX/Scale*0.5f;
+            DrawRect(Ink,(Center-180)*Scale,300*Scale,360*Scale,42*Scale);
+            Label(TurnRight ? TEXT("TURN RIGHT TO THE WARD  >") : TEXT("<  TURN LEFT TO THE WARD"),Center-165,307,0.85f,Gold);
         }
     }
     if (Game->HexImpactRemaining>0)
