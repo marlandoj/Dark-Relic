@@ -1,7 +1,17 @@
 # Dark Relic factory source lane
 
-status: complete
-watchdog: off
+status: in_progress
+watchdog: active
+
+## Warden Fury transformation (ZOU-1644)
+
+- [x] Add interruptible challenge gesture and timer-driven crimson/gold aura
+- [x] Pass 155 portable checks
+- [ ] Compile and verify prepared Unreal bindings and gameplay
+- [ ] Inspect charge, peak, fade and off captures
+- [ ] Verify standalone delivery and preservation of previous packages
+
+Candidate: H:\DarkRelicAura-20260912. Package: H:\DarkRelicAuraPackage. Registered worker: H:\DarkRelicAuraDelivery-20260912\job.json. Read terminal receipts before retrying. Human aesthetic/playfeel acceptance is pending. See WARDEN-AURA.md.
 
 ## Warden hit and voice feedback (ZOU-1643)
 

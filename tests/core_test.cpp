@@ -1,5 +1,6 @@
 #include "Portable/DarkRelicRules.h"
 #include "Portable/BellkeeperAttack.h"
+#include "Portable/FuryAura.h"
 #include <cstdlib>
 #include <iostream>
 #include <limits>
@@ -17,6 +18,21 @@ void win(Rules& game) {
     check(game.snapshot().phase == Phase::Escaped, "escaped");
 }
 int main() {
+    check(fury_aura(6,6,true)==0, "aura starts from zero");
+    check(fury_aura(5.75,6,true)==1, "aura ramps up in quarter second");
+    check(fury_aura(3,6,true)==1, "aura remains full through power plateau");
+    check(fury_aura(1,6,true)==0.5, "aura halfway faded in final second");
+    check(fury_aura(0,6,true)==0 && fury_aura(-1,6,true)==0, "expired aura stays off");
+    check(fury_aura(3,6,false)==0, "death and extraction results extinguish aura");
+    check(fury_aura(7,6,true)==0 && fury_aura(1,0,true)==0, "invalid timers cannot glow");
+    check(fury_aura(std::numeric_limits<double>::quiet_NaN(),6,true)==0, "nonfinite aura fails closed");
+    double prior=1;
+    for (int i=200;i>=0;--i) {
+        const double intensity=fury_aura(i/100.0,6,true);
+        if (intensity>prior || intensity<0 || intensity>1) check(false,"fade is monotonic and bounded");
+        prior=intensity;
+    }
+    check(prior==0,"fade reaches exact zero");
     Rules w;
     check(!w.act(Action::RelicBurst) && !w.act(Action::Rally), "abilities rejected before run");
     check(w.start() && w.act(Action::Light), "start sword chain");
