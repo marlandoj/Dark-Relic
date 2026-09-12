@@ -1,6 +1,7 @@
 #include "Portable/DarkRelicRules.h"
 #include "Portable/BellkeeperAttack.h"
 #include "Portable/FuryAura.h"
+#include "Portable/Presentation.h"
 #include <cstdlib>
 #include <iostream>
 #include <limits>
@@ -18,6 +19,25 @@ void win(Rules& game) {
     check(game.snapshot().phase == Phase::Escaped, "escaped");
 }
 int main() {
+    CuePriority voices[16];
+    for (auto& v : voices) v=CuePriority::Warning;
+    auto priority=[&](std::size_t i){ return voices[i]; };
+    check(cue_victim(15,CuePriority::Ambient,priority)==-1,"free voice slot admits ambience");
+    check(cue_victim(16,CuePriority::Action,priority)==-2,"routine cue cannot evict a warning");
+    check(cue_victim(16,CuePriority::Warning,priority)==-2,"equal warnings keep their full duration");
+    voices[9]=CuePriority::Ambient;
+    check(cue_victim(16,CuePriority::Warning,priority)==9,"warning evicts ambience at saturation");
+    voices[2]=CuePriority::Action;
+    check(cue_victim(16,CuePriority::Terminal,priority)==9,"terminal cue evicts lowest priority first");
+    check(!voice_may_interrupt(0,2,0.2),"routine exertion cannot cut off pain");
+    check(!voice_may_interrupt(2,3,0.2),"pain cannot cut off death or victory");
+    check(voice_may_interrupt(3,2,0.2),"death interrupts pain immediately");
+    check(voice_may_interrupt(0,3,0),"expired voice does not block next run");
+    check(ward_prompt(false,false,true,true)==WardPrompt::None,"results never advertise extraction");
+    check(ward_prompt(true,false,true,false)==WardPrompt::MissingRelic,"ward requires Blackbell");
+    check(ward_prompt(true,false,true,true)==WardPrompt::Ready,"relic enables ward prompt");
+    check(ward_prompt(true,true,true,true)==WardPrompt::Holding,"active extraction displays progress");
+    check(ward_prompt(true,false,false,true)==WardPrompt::None,"outside ward offers no interaction");
     check(fury_aura(6,6,true)==0, "aura starts from zero");
     check(fury_aura(5.75,6,true)==1, "aura ramps up in quarter second");
     check(fury_aura(3,6,true)==1, "aura remains full through power plateau");

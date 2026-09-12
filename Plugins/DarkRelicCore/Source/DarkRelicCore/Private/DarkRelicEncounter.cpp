@@ -75,9 +75,42 @@ static void TickCharacterVisuals(ACharacter* Character, const FDarkRelicCharacte
         if (auto* Node = Mesh->GetSingleNodeInstance()) Node->SetBlendSpacePosition(V.LocomotionAxes*Speed);
 }
 
-void ADarkRelicEncounter::PlayCue(float Frequency, float Duration, float Gain, int32 Texture, const FVector* Position)
+void ADarkRelicEncounter::ClearCues()
 {
-    if (ActiveSounds.Num() >= 16 || FParse::Param(FCommandLine::Get(),TEXT("nosound"))) return;
+    for (auto& Sound : ActiveSounds)
+        if (IsValid(Sound.Component)) { Sound.Component->Stop(); Sound.Component->DestroyComponent(); }
+    ActiveSounds.Empty();
+}
+
+static int VoicePriority(EDarkRelicVoice Event)
+{
+    if (Event==EDarkRelicVoice::Death || Event==EDarkRelicVoice::Cheer) return 3;
+    if (Event==EDarkRelicVoice::Pain || Event==EDarkRelicVoice::HeavyPain) return 2;
+    return 0;
+}
+
+bool ADarkRelicEncounter::HexTellVisible(const FDarkRelicEnemy& E) const
+{
+    const auto S=Run->GetSnapshot();
+    if (!IsValid(Player) || !IsValid(E.Actor) || E.Role!=1 || E.Health<=0 || E.Windup<=0 ||
+        (S.Phase!=EDarkRelicPhase::Running && S.Phase!=EDarkRelicPhase::Extracting)) return false;
+    if (FVector::Dist2D(Player->GetActorLocation(),E.Actor->GetActorLocation())>=680) return false;
+    FHitResult Hit; FCollisionQueryParams Query; Query.AddIgnoredActor(E.Actor);
+    const bool Blocked=GetWorld()->LineTraceSingleByChannel(Hit,E.Actor->GetActorLocation(),Player->GetActorLocation(),ECC_Visibility,Query);
+    return !Blocked || Hit.GetActor()==Player;
+}
+
+void ADarkRelicEncounter::PlayCue(float Frequency, float Duration, float Gain, int32 Texture, const FVector* Position, dark_relic::CuePriority Priority)
+{
+    if (FParse::Param(FCommandLine::Get(),TEXT("nosound"))) return;
+    const int32 Victim=dark_relic::cue_victim(ActiveSounds.Num(),Priority,[&](size_t I){ return ActiveSounds[static_cast<int32>(I)].Priority; });
+    if (Victim==-2) { ++CueDropped; return; }
+    if (Victim>=0)
+    {
+        auto* Old=ActiveSounds[Victim].Component.Get();
+        if (IsValid(Old)) { Old->Stop(); Old->DestroyComponent(); }
+        ActiveSounds.RemoveAt(Victim); ++CueEvicted;
+    }
     auto* Wave=NewObject<USoundWaveProcedural>();
     Wave->SetSampleRate(22050);
     Wave->NumChannels=1;
@@ -103,15 +136,34 @@ void ADarkRelicEncounter::PlayCue(float Frequency, float Duration, float Gain, i
         Samples[I]=static_cast<int16>(FMath::Clamp(Signal*Envelope*Gain,-1.f,1.f)*32767);
     }
     Wave->QueueAudio(reinterpret_cast<const uint8*>(Samples.GetData()),Samples.Num()*sizeof(int16));
-    float Volume = Position && Player ? FMath::Clamp(1.f-FVector::Dist(*Position,Player->GetActorLocation())/1600.f,0.05f,1.f) : 1.f;
-    auto* Component = UGameplayStatics::SpawnSound2D(this,Wave,Volume,1,0,nullptr,false,false);
-    if (Component) { FDarkRelicTimedSound Sound; Sound.Component=Component; Sound.Remaining=Duration+0.05f; ActiveSounds.Add(Sound); }
+    auto* Component=NewObject<UAudioComponent>(this);
+    Component->bAutoActivate=false;
+    Component->bAutoDestroy=false;
+    Component->bIsUISound=Position==nullptr;
+    Component->bAllowSpatialization=Position!=nullptr;
+    if (Position)
+    {
+        Component->bOverrideAttenuation=true;
+        Component->AttenuationOverrides.bAttenuate=true;
+        Component->AttenuationOverrides.bSpatialize=true;
+        Component->AttenuationOverrides.AttenuationShapeExtents=FVector(200);
+        Component->AttenuationOverrides.FalloffDistance=1400;
+    }
+    Component->RegisterComponent();
+    if (Position) Component->SetWorldLocation(*Position);
+    Component->SetSound(Wave);
+    Component->Play();
+    FDarkRelicTimedSound Sound;
+    Sound.Component=Component; Sound.Remaining=Duration+0.05f; Sound.Priority=Priority;
+    ActiveSounds.Add(Sound); ++CueAdmitted;
 }
 
 void ADarkRelicEncounter::PlayHeroVoice(EDarkRelicVoice Event)
 {
     const auto* Binding=HeroVoices.FindByPredicate([Event](const FDarkRelicVoiceBinding& B){ return B.Event==Event && B.Sound; });
     if (!Binding) return;
+    if (!dark_relic::voice_may_interrupt(VoicePriority(Event),VoicePriority(LastVoice),VoiceRemaining))
+    { ++VoiceDropped; return; }
     const bool Pain=Event==EDarkRelicVoice::Pain || Event==EDarkRelicVoice::HeavyPain;
     if (Pain && PainVoiceCooldown>0) return;
     if (Pain) PainVoiceCooldown=0.18f;
@@ -264,6 +316,7 @@ void ADarkRelicEncounter::Impact(const FVector& Position, bool Heavy)
 void ADarkRelicEncounter::FeedbackTick(float Dt)
 {
     for (auto& E : Enemies) TickEnemyFeedback(E,Dt);
+    HexImpactRemaining=FMath::Max(0.f,HexImpactRemaining-Dt);
     PainVoiceCooldown=FMath::Max(0.f,PainVoiceCooldown-Dt);
     VoiceRemaining=FMath::Max(0.f,VoiceRemaining-Dt);
     if (VoiceRemaining<=0 && IsValid(HeroVoiceComponent)) HeroVoiceComponent->Stop();
@@ -300,16 +353,16 @@ void ADarkRelicEncounter::FeedbackTick(float Dt)
     }
     FootstepRemaining-=Dt;
     if (Player->GetVelocity().Size2D()>80 && Player->GetCharacterMovement()->IsMovingOnGround() && FootstepRemaining<=0)
-    { PlayCue(95,0.12f,0.10f,2); FootstepRemaining=0.34f; }
+    { PlayCue(95,0.12f,0.10f,2,nullptr,dark_relic::CuePriority::Ambient); FootstepRemaining=0.34f; }
     AmbienceRemaining-=Dt;
-    if (AmbienceRemaining<=0) { PlayCue(70,5,0.12f,3); AmbienceRemaining=4.8f; }
+    if (AmbienceRemaining<=0) { PlayCue(70,5,0.12f,3,nullptr,dark_relic::CuePriority::Ambient); AmbienceRemaining=4.8f; }
     if (S.Phase==EDarkRelicPhase::Extracting)
     {
         BellRemaining-=Dt;
         if (BellRemaining<=0)
         {
             float Progress=1.f-S.ExtractionRemaining/FMath::Max(0.1f,Run->Tuning.ExtractionSeconds);
-            PlayCue(220+Progress*110,0.7f,0.14f+Progress*0.07f);
+            PlayCue(220+Progress*110,0.7f,0.14f+Progress*0.07f,0,nullptr,dark_relic::CuePriority::Warning);
             BellRemaining=FMath::Lerp(1.8f,0.45f,Progress); WardPulse=0.5f; ++BellCount;
         }
     } else BellRemaining=0;
@@ -469,6 +522,9 @@ void ADarkRelicEncounter::ResetEncounter()
 void ADarkRelicEncounter::Restart()
 {
     if (!Player || !Run->StartRun()) return;
+    ClearCues();
+    FootstepRemaining=0; AmbienceRemaining=0; HexImpactRemaining=0; HitFlash=0;
+    RunStartingCredits=Run->GetSnapshot().Credits; RunEarnedCredits=0;
     RecoilRemaining=0; RecoilDirection=FVector::ZeroVector;
     PainVoiceCooldown=0; VoiceRemaining=0; HealingVoicePending=false;
     if (IsValid(HeroVoiceComponent)) HeroVoiceComponent->Stop();
@@ -492,7 +548,9 @@ void ADarkRelicEncounter::Restart()
 
 void ADarkRelicEncounter::EndRun(bool Escaped)
 {
-    for (auto& E : Enemies) ClearEnemyFeedback(E);
+    for (auto& E : Enemies) { ClearEnemyFeedback(E); E.Windup=0; E.BellAttack.cancel(); }
+    ClearCues(); HexImpactRemaining=0;
+    RunEarnedCredits=Escaped ? FMath::Max(0,Run->GetSnapshot().Credits-RunStartingCredits) : 0;
     TickFury();
     RecoilRemaining=0; HealingVoicePending=false;
     PlayHeroVoice(Escaped ? EDarkRelicVoice::Cheer : EDarkRelicVoice::Death);
@@ -501,7 +559,7 @@ void ADarkRelicEncounter::EndRun(bool Escaped)
     if (Escaped)
     {
         CelebrationRemaining=5; WardPulse=1;
-        PlayCue(330,1.8f,0.18f); PlayCue(440,2.2f,0.12f); PlayCue(660,2.6f,0.08f);
+        PlayCue(330,1.8f,0.18f,0,nullptr,dark_relic::CuePriority::Terminal); PlayCue(440,2.2f,0.12f,0,nullptr,dark_relic::CuePriority::Terminal); PlayCue(660,2.6f,0.08f,0,nullptr,dark_relic::CuePriority::Terminal);
     }
     if (!Escaped && PlayCharacterAction(Player,HeroVisuals.Death,1.6f)) HeroAnimationRemaining=100000;
     if (Player) Player->GetCharacterMovement()->DisableMovement();
@@ -783,7 +841,7 @@ void ADarkRelicEncounter::Tick(float Dt)
                 if (E.BellAttack.update_health(E.Health,E.MaxHealth))
                 {
                     Notify(TEXT("BELLKEEPER ENRAGED. Watch the ground and clear the ring."));
-                    PlayCue(70,0.9f,0.23f,1);
+                    PlayCue(70,0.9f,0.23f,1,nullptr,dark_relic::CuePriority::Warning);
                     E.Actor->GetCharacterMovement()->MaxWalkSpeed=290;
                 }
                 const bool WasArea=E.BellAttack.remaining>0;
@@ -804,7 +862,7 @@ void ADarkRelicEncounter::Tick(float Dt)
                     E.Actor->SetActorRotation(To.Rotation());
                     E.AnimationRemaining=static_cast<float>(E.BellAttack.duration)+0.25f;
                     if (EnemyVisuals.IsValidIndex(E.Role)) PlayCharacterAction(E.Actor,EnemyVisuals[E.Role].HeavyAttack ? EnemyVisuals[E.Role].HeavyAttack.Get() : EnemyVisuals[E.Role].LightAttack.Get(),E.AnimationRemaining);
-                    PlayCue(110,0.6f,0.18f,0,&E.AreaCenter);
+                    PlayCue(110,0.6f,0.18f,0,&E.AreaCenter,dark_relic::CuePriority::Warning);
                     Notify(TEXT("BELLKEEPER: AREA STRIKE. Leave the marked ring."));
                     continue;
                 }
@@ -817,7 +875,11 @@ void ADarkRelicEncounter::Tick(float Dt)
                     FHitResult Hit; FCollisionQueryParams Query; Query.AddIgnoredActor(E.Actor);
                     bool Blocked = GetWorld()->LineTraceSingleByChannel(Hit,E.Actor->GetActorLocation(),Player->GetActorLocation(),ECC_Visibility,Query);
                     if (Distance < Range+30 && (!Blocked || Hit.GetActor() == Player))
-                        DamagePlayer(E.Role == 2 ? 30 : 14,E.Actor->GetActorLocation(),E.Role==2);
+                    {
+                        const bool Landed=DamagePlayer(E.Role == 2 ? 30 : 14,E.Actor->GetActorLocation(),E.Role==2);
+                        if (Landed && E.Role==1)
+                        { HexImpactRemaining=0.22f; HexImpactPosition=Player->GetActorLocation()+FVector(0,0,25); }
+                    }
                     E.Cooldown = E.Role == 2 ? (E.BellAttack.enraged ? 1.f : 1.4f) : 1.8f;
                 }
             }
@@ -830,7 +892,7 @@ void ADarkRelicEncounter::Tick(float Dt)
                     E.Actor->SetActorRotation(To.Rotation());
                     E.Actor->GetCharacterMovement()->StopMovementImmediately();
                     FVector CuePosition=E.Actor->GetActorLocation();
-                    PlayCue(E.Role==0 ? 180.f : E.Role==1 ? 620.f : 90.f,0.35f,0.12f,E.Role==0 ? 1 : 0,&CuePosition);
+                    PlayCue(E.Role==0 ? 180.f : E.Role==1 ? 620.f : 90.f,0.35f,0.12f,E.Role==0 ? 1 : 0,&CuePosition,dark_relic::CuePriority::Warning);
                     if (EnemyVisuals.IsValidIndex(E.Role))
                     {
                         E.AnimationRemaining=E.Windup+0.25f;
@@ -1156,7 +1218,9 @@ void ADarkRelicHUD::DrawHUD()
     for (TActorIterator<ADarkRelicEncounter> It(GetWorld());It;++It) { Game=*It; break; }
     if (!Game || !Game->Player) return;
     const auto S=Game->Run->GetSnapshot();
-    const float Scale=FMath::Clamp(Canvas->ClipY/1080.f,0.65f,2.f);
+    const float Scale=FMath::Clamp(FMath::Min(Canvas->ClipY/1080.f,Canvas->ClipX/1440.f),0.5f,2.f);
+    const bool Live=S.Phase==EDarkRelicPhase::Running || S.Phase==EDarkRelicPhase::Extracting;
+    const bool HasRelic=S.Carried.IsValidIndex(3) && S.Carried[3]>0;
     const FLinearColor Ink(0.025f,0.035f,0.033f,0.88f), Text(0.9f,0.9f,0.82f), Gold(0.83f,0.65f,0.32f), Red(0.7f,0.17f,0.13f), Green(0.35f,0.65f,0.48f);
     auto Label=[&](const FString& T,float X,float Y,float Size,FLinearColor C){ DrawText(T,C,X*Scale,Y*Scale,GEngine->GetMediumFont(),Size*Scale*1.7f,false); };
     auto Bar=[&](float X,float Y,float W,float H,float V,FLinearColor C){ DrawRect(Ink,X*Scale,Y*Scale,W*Scale,H*Scale); DrawRect(C,(X+2)*Scale,(Y+2)*Scale,(W-4)*Scale*FMath::Clamp(V,0.f,1.f),(H-4)*Scale); };
@@ -1170,6 +1234,7 @@ void ADarkRelicHUD::DrawHUD()
             if (P.Z>0 && Q.Z>0) DrawLine(P.X,P.Y,Q.X,Q.Y,Color,Width*Scale);
         }
     };
+    if(Game->HitFlash>0) DrawRect(FLinearColor(0.5f,0.05f,0.02f,Game->HitFlash),0,0,Canvas->ClipX,Canvas->ClipY);
     float WardGlow=Game->WardPulse*0.7f+(S.Phase==EDarkRelicPhase::Extracting ? 0.65f : 0.25f);
     Ring(Game->ExtractionCenter-FVector(0,0,75),230,FLinearColor(0.9f,0.72f,0.35f,WardGlow),3);
     if (S.Phase==EDarkRelicPhase::Extracting || Game->CelebrationRemaining>0)
@@ -1195,6 +1260,22 @@ void ADarkRelicHUD::DrawHUD()
         }
     }
     Label(TEXT("DARK RELIC  /  WIDOWFEN"),40,30,1.2f,Text);
+    if (!Live)
+    {
+        const float X=Canvas->ClipX/Scale*0.5f-350, Y=Canvas->ClipY/Scale*0.34f;
+        DrawRect(Ink,X*Scale,(Y-24)*Scale,700*Scale,290*Scale);
+        Label(S.Phase==EDarkRelicPhase::Escaped?TEXT("BLACKBELL RECLAIMED"):TEXT("THE FEN CLAIMED YOU"),X+28,Y,1.4f,Gold);
+        Label(S.Phase==EDarkRelicPhase::Escaped ? FString::Printf(TEXT("This run: +%d credits secured"),Game->RunEarnedCredits) : TEXT("Carried spoils lost. Your bank is safe."),X+28,Y+50,0.9f,Text);
+        Label(FString::Printf(TEXT("Available bank: %d credits"),S.Credits),X+28,Y+88,0.9f,Text);
+        const FString Upgrade=S.Upgrade>0 ? TEXT("Resolve owned: +20 max health on each new run") : S.Credits>=dark_relic::Rules::UpgradeCost ? TEXT("U  Buy Resolve: 100 credits, +20 max health next run") : FString::Printf(TEXT("Resolve: %d / 100 credits, +20 max health next run"),S.Credits);
+        Label(Upgrade,X+28,Y+130,0.82f,Text);
+        Label(TEXT("R  NEW RUN"),X+28,Y+198,1.2f,Gold);
+        Label(TEXT("Esc  Quit"),X+460,Y+206,0.85f,Text);
+        if (Game->MessageRemaining>0) Label(Game->Message,40,Canvas->ClipY/Scale-80,0.85f,Text);
+        return;
+    }
+    DrawRect(Ink,24*Scale,66*Scale,535*Scale,305*Scale);
+    DrawRect(Ink,Canvas->ClipX-380*Scale,66*Scale,356*Scale,205*Scale);
     Label(TEXT("Health"),40,76,0.9f,Text); Bar(40,100,260,16,S.Health/S.MaxHealth,Red);
     Label(TEXT("Stamina"),40,123,0.9f,Text); Bar(40,147,260,12,S.Stamina/S.MaxStamina,Green);
     Label(FString::Printf(TEXT("Heals %d   |   Bank %d   |   Resolve %d/1"),S.Heals,S.Credits,S.Upgrade),40,176,0.8f,Text);
@@ -1223,7 +1304,7 @@ void ADarkRelicHUD::DrawHUD()
         if (Game->BurstVisualRemaining>0)
             Ring(Game->BurstCenter,450*(1-Game->BurstVisualRemaining/0.5f),FLinearColor(0.76f,0.65f,0.93f,Game->BurstVisualRemaining*2),5);
     }
-    Label(S.Carried.Num()==4 && S.Carried[3]>0 ? TEXT("REACH THE NORTHERN WARD") : TEXT("DEFEAT THE BELLKEEPER. RECOVER BLACKBELL."),40,220,0.9f,Gold);
+    Label(HasRelic ? TEXT("REACH THE NORTHERN WARD") : TEXT("DEFEAT THE BELLKEEPER. RECOVER BLACKBELL."),40,220,0.9f,Gold);
     if (S.Carried.Num()==4) Label(FString::Printf(TEXT("Iron %d   Tallow %d   Salt %d   Blackbell %d"),S.Carried[0],S.Carried[1],S.Carried[2],S.Carried[3]),40,253,0.8f,Text);
     float Bottom=Canvas->ClipY/Scale;
     DrawRect(Ink,24*Scale,(Bottom-104)*Scale,Canvas->ClipX-48*Scale,80*Scale);
@@ -1232,7 +1313,30 @@ void ADarkRelicHUD::DrawHUD()
     if (Game->MessageRemaining>0) Label(Game->Message,40,Bottom-141,1.f,Gold);
     if (S.Phase==EDarkRelicPhase::Extracting)
     { Label(FString::Printf(TEXT("HOLD THE WARD  %.1fs"),S.ExtractionRemaining),40,302,1.2f,Gold); Bar(40,340,300,14,1-S.ExtractionRemaining/Game->Run->Tuning.ExtractionSeconds,Gold); }
-    else if (S.InZone) Label(TEXT("E  Begin extraction"),40,300,1.1f,Gold);
+    else if (dark_relic::ward_prompt(Live,false,S.InZone,HasRelic)==dark_relic::WardPrompt::Ready)
+        Label(TEXT("E  Begin extraction"),40,300,1.1f,Gold);
+    else if (S.InZone) Label(TEXT("WARD SEALED: recover Blackbell first"),40,300,0.9f,Text);
+    if (HasRelic && !S.InZone)
+    {
+        FVector Mark=Project(Game->ExtractionCenter+FVector(0,0,130));
+        const float X=FMath::Clamp(static_cast<float>(Mark.X/Scale),600.f,Canvas->ClipX/Scale-440.f);
+        const float Y=FMath::Clamp(static_cast<float>(Mark.Y/Scale),310.f,Canvas->ClipY/Scale-220.f);
+        if (Mark.Z>0)
+        {
+            DrawRect(Ink,(X-10)*Scale,(Y-5)*Scale,250*Scale,38*Scale);
+            Label(FString::Printf(TEXT("WARD  %.0fm"),FVector::Dist2D(Game->Player->GetActorLocation(),Game->ExtractionCenter)/100),X,Y,0.85f,Gold);
+        }
+    }
+    if (Game->HexImpactRemaining>0)
+    {
+        FVector P=Project(Game->HexImpactPosition);
+        if (P.Z>0)
+        {
+            float R=24*Scale*(1-Game->HexImpactRemaining/0.22f);
+            DrawLine(P.X-R,P.Y-R,P.X+R,P.Y+R,FLinearColor(0.7f,0.8f,1),3*Scale);
+            DrawLine(P.X-R,P.Y+R,P.X+R,P.Y-R,FLinearColor(0.7f,0.8f,1),3*Scale);
+        }
+    }
     for (const auto& E : Game->Enemies)
     {
         if (!IsValid(E.Actor)||E.Health<=0) continue;
@@ -1240,23 +1344,37 @@ void ADarkRelicHUD::DrawHUD()
         if (Area)
         {
             FVector Ground=E.AreaCenter-FVector(0,0,75);
-            Ring(Ground,static_cast<float>(dark_relic::BellkeeperAttack::Radius),Gold,4);
+            const FLinearColor Danger(1.f,0.38f,0.18f);
+            Ring(Ground,static_cast<float>(dark_relic::BellkeeperAttack::Radius),Danger,5);
+            for (int32 I=0;I<12;++I)
+            {
+                const float A=I*PI/6;
+                const FVector Dir(FMath::Cos(A),FMath::Sin(A),0);
+                FVector P=Project(Ground+Dir*325), Q=Project(Ground+Dir*395);
+                if (P.Z>0 && Q.Z>0) DrawLine(P.X,P.Y,Q.X,Q.Y,Danger,4*Scale);
+            }
             Ring(Ground,static_cast<float>(dark_relic::BellkeeperAttack::Radius*(1-E.BellAttack.remaining/E.BellAttack.duration)),Red,3);
         }
         FVector P=Project(E.Actor->GetActorLocation()+FVector(0,0,120));
         if(P.Z<=0) continue;
         float X=P.X/Scale-65,Y=P.Y/Scale;
-        Label(Area ? TEXT("!  LEAVE THE RING") : E.Windup>0 ? TEXT("!  DODGE") : E.Role==2 ? (E.BellAttack.enraged ? TEXT("BELLKEEPER: ENRAGED") : TEXT("BELLKEEPER")) : E.Role==1 ? TEXT("HEXBOUND") : TEXT("DREG"),X,Y,0.75f,(Area||E.Windup>0)?Gold:Text);
+        const bool Hex=Game->HexTellVisible(E);
+        if (Hex)
+        {
+            FVector Cast=Project(E.Actor->GetActorLocation()+E.Actor->GetActorForwardVector()*40+FVector(0,0,45));
+            if (Cast.Z>0)
+            {
+                const float R=(12+18*(1-E.Windup/0.8f))*Scale;
+                const FLinearColor Tell(0.72f,0.8f,1.f);
+                DrawLine(Cast.X,Cast.Y-R,Cast.X+R,Cast.Y,Tell,3*Scale);
+                DrawLine(Cast.X+R,Cast.Y,Cast.X,Cast.Y+R,Tell,3*Scale);
+                DrawLine(Cast.X,Cast.Y+R,Cast.X-R,Cast.Y,Tell,3*Scale);
+                DrawLine(Cast.X-R,Cast.Y,Cast.X,Cast.Y-R,Tell,3*Scale);
+            }
+        }
+        DrawRect(Ink,(X-8)*Scale,(Y-4)*Scale,(Area ? 235 : E.Role==2 ? 295 : 210)*Scale,(Area ? 48 : 38)*Scale);
+        Label(Area ? TEXT("!  LEAVE THE RING") : Hex ? TEXT("!  HEX CAST: DODGE") : E.Windup>0 && E.Role!=1 ? TEXT("!  DODGE") : E.Role==2 ? (E.BellAttack.enraged ? TEXT("BELLKEEPER: ENRAGED") : TEXT("BELLKEEPER")) : E.Role==1 ? TEXT("HEXBOUND") : TEXT("DREG"),X,Y,0.75f,(Area||E.Windup>0)?Gold:Text);
         Bar(X,Y+22,130,8,E.Health/E.MaxHealth,Red);
         if (Area) Bar(X,Y+33,130,5,static_cast<float>(1-E.BellAttack.remaining/E.BellAttack.duration),Gold);
     }
-    if (S.Phase==EDarkRelicPhase::Dead || S.Phase==EDarkRelicPhase::Escaped)
-    {
-        float X=Canvas->ClipX/Scale*0.5f-270, Y=Bottom*0.40f;
-        DrawRect(Ink,X*Scale,(Y-24)*Scale,540*Scale,175*Scale);
-        Label(S.Phase==EDarkRelicPhase::Escaped?TEXT("BLACKBELL RECLAIMED"):TEXT("THE FEN CLAIMED YOU"),X+28,Y,1.4f,Gold);
-        Label(FString::Printf(TEXT("Banked credits: %d"),S.Credits),X+28,Y+48,1.f,Text);
-        Label(TEXT("R  New run     U  Upgrade resolve     Esc  Quit"),X+28,Y+94,0.85f,Text);
-    }
-    if(Game->HitFlash>0) DrawRect(FLinearColor(0.5f,0.05f,0.02f,Game->HitFlash),0,0,Canvas->ClipX,Canvas->ClipY);
 }

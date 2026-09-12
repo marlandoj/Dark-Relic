@@ -4,6 +4,7 @@
 #include "GameFramework/HUD.h"
 #include "DarkRelicRunComponent.h"
 #include "Portable/BellkeeperAttack.h"
+#include "Portable/Presentation.h"
 #include "DarkRelicEncounter.generated.h"
 
 class ACharacter;
@@ -38,6 +39,7 @@ struct FDarkRelicTimedSound
     GENERATED_BODY()
     UPROPERTY() TObjectPtr<UAudioComponent> Component;
     float Remaining = 0;
+    dark_relic::CuePriority Priority = dark_relic::CuePriority::Action;
 };
 
 USTRUCT(BlueprintType)
@@ -185,7 +187,18 @@ public:
     int32 AreaAttackCount = 0;
     float SmokeAreaHealth = 0;
     float SmokeAbilityHealth = 0;
-    void PlayCue(float Frequency, float Duration, float Gain, int32 Texture = 0, const FVector* Position = nullptr);
+    int32 CueAdmitted = 0;
+    int32 CueDropped = 0;
+    int32 CueEvicted = 0;
+    int32 VoiceDropped = 0;
+    int32 RunStartingCredits = 0;
+    int32 RunEarnedCredits = 0;
+    float HexImpactRemaining = 0;
+    FVector HexImpactPosition = FVector::ZeroVector;
+    bool PolishCapture = false;
+    bool HexTellVisible(const FDarkRelicEnemy& Enemy) const;
+    void ClearCues();
+    void PlayCue(float Frequency, float Duration, float Gain, int32 Texture = 0, const FVector* Position = nullptr, dark_relic::CuePriority Priority = dark_relic::CuePriority::Action);
     void FeedbackTick(float DeltaSeconds);
     void Impact(const FVector& Position, bool Heavy);
     UFUNCTION() void EndRun(bool Escaped);
