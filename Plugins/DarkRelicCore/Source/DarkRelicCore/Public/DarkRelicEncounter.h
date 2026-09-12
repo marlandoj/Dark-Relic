@@ -13,6 +13,10 @@ class UAnimSequence;
 class UBlendSpace;
 class UAudioComponent;
 class USoundBase;
+class UMaterialInterface;
+class UMaterialInstanceDynamic;
+class UStaticMeshComponent;
+class UPointLightComponent;
 
 UENUM(BlueprintType)
 enum class EDarkRelicVoice : uint8
@@ -132,6 +136,16 @@ public:
     float SmokeElapsed = 0;
     FString SmokeSlot;
     float HeroAnimationRemaining = 0;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Fury") TObjectPtr<UAnimSequence> FuryAnimation;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Fury") TObjectPtr<UMaterialInterface> FuryMaterial;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Fury") bool RequireFuryVisuals = false;
+    UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> FuryDynamicMaterial;
+    UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> FuryMeshes;
+    UPROPERTY() TObjectPtr<UPointLightComponent> FuryLight;
+    float FuryIntensity = 0;
+    bool AuraCapture = false;
+    void InitializeFury();
+    void TickFury();
     UPROPERTY() TArray<FDarkRelicTimedSound> ActiveSounds;
     TArray<FDarkRelicImpact> Impacts;
     float FootstepRemaining = 0;

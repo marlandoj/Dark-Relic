@@ -3,6 +3,16 @@
 status: complete
 watchdog: off
 
+## Warden Fury transformation (ZOU-1644)
+
+- [x] Add interruptible challenge gesture and timer-driven crimson/gold aura
+- [x] Pass 155 portable checks
+- [x] Compile and verify prepared Unreal bindings and gameplay
+- [x] Inspect charge, peak, fade and off captures
+- [x] Verify standalone delivery and preservation of previous packages
+
+Delivered September 12, 2026 at 11:13 AM Arizona: Dark Relic Fury Aura desktop shortcut. Candidate: H:\DarkRelicAura-20260912. Package: H:\DarkRelicAuraPackage. Final IntegrationEvidence/aura-release.json passed: 155 portable checks, 70 editor and 70 packaged checks, inspected captures, ordinary Escape exit 0, 11 source hashes matched, 35 protected release hashes unchanged. All workers finished; no game/editor/build process remains. Human aesthetic/playfeel acceptance is pending. See WARDEN-AURA.md. PR #6 contains the source.
+
 ## Warden hit and voice feedback (ZOU-1643)
 
 - [x] Add slight collision-swept recoil and 11 bound Greystone vocal events

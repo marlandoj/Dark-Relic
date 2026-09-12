@@ -63,6 +63,8 @@ The current evasion uses Greystone's jump-start animation: an evasive hop, not a
 
 ### Warden abilities candidate
 
+The **Fury aura candidate** adds an expressive power-up gesture, crimson-and-gold rim glow, rising embers and local lighting. The glow fades with the remaining Fury power. See [transformation behavior and validation](WARDEN-AURA.md) for the separate candidate's status.
+
 The **Warden feedback candidate** adds a short knockback on landed enemy hits and Greystone vocal reactions for strikes, dodges, relic powers, Fury, healing and pain. See [hit and voice feedback](WARDEN-FEEDBACK.md) for its separate build and validation status.
 
 Chain three light strikes for **Sunder**, unleash a **Relic Burst** with F, or activate **Warden Fury** with R for six seconds of stronger attacks and reduced incoming damage. Cooldowns and stamina limit both relic arts. Warden combines sword combat with relic magic; Q healing and result-screen R restart are preserved. See [ability details and validation](WARDEN-ABILITIES.md). This branch's new abilities require the separate Warden build; older packages retain their original moves.

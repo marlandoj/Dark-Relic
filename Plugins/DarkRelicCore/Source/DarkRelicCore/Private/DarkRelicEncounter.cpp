@@ -27,6 +27,9 @@
 #include "Sound/SoundBase.h"
 #include "Components/AudioComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Components/PointLightComponent.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Portable/FuryAura.h"
 
 static bool ValidVisuals(const FDarkRelicCharacterVisuals& V)
 {
@@ -159,6 +162,9 @@ void ADarkRelicEncounter::TickRecoil(float Dt)
 
 void ADarkRelicEncounter::EndPlay(const EEndPlayReason::Type Reason)
 {
+    for (const auto& Mesh : FuryMeshes) if (IsValid(Mesh)) Mesh->DestroyComponent();
+    FuryMeshes.Empty();
+    if (IsValid(FuryLight)) FuryLight->DestroyComponent();
     if (IsValid(HeroVoiceComponent)) { HeroVoiceComponent->Stop(); HeroVoiceComponent->DestroyComponent(); }
     for (auto& Sound : ActiveSounds) if (IsValid(Sound.Component)) { Sound.Component->Stop(); Sound.Component->DestroyComponent(); }
     ActiveSounds.Empty();
@@ -239,6 +245,7 @@ void ADarkRelicEncounter::BeginPlay()
     Super::BeginPlay();
     Smoke = FParse::Param(FCommandLine::Get(), TEXT("DarkRelicSmoke"));
     Capture = FParse::Param(FCommandLine::Get(), TEXT("DarkRelicCapture"));
+    AuraCapture = FParse::Param(FCommandLine::Get(), TEXT("DarkRelicAuraCapture"));
     if (Smoke)
     {
         SmokeSlot = TEXT("DarkRelicRuntimeSmoke_") + FGuid::NewGuid().ToString(EGuidFormats::Digits);
@@ -280,6 +287,13 @@ bool ADarkRelicEncounter::InitializePlayer()
         return false;
     }
     if (ValidVisuals(HeroVisuals)) ApplyVisuals(Player,HeroVisuals);
+    if (RequireFuryVisuals && (!FuryMaterial || !FuryAnimation || !HeroVisuals.Mesh || FuryAnimation->GetSkeleton()!=HeroVisuals.Mesh->GetSkeleton()))
+    {
+        UE_LOG(LogTemp,Error,TEXT("DARK_RELIC_FURY_BINDINGS_INVALID"));
+        if (Smoke) { SmokeCheck(TEXT("required fury bindings are compatible"),false); FinishSmoke(); }
+        return false;
+    }
+    InitializeFury();
     PC->ClientSetHUD(ADarkRelicHUD::StaticClass());
     PC->SetViewTarget(Player);
     PC->SetInputMode(FInputModeGameOnly());
@@ -363,6 +377,7 @@ void ADarkRelicEncounter::Restart()
     if (IsValid(HeroVoiceComponent)) HeroVoiceComponent->Stop();
     AttackRemaining = 0;
     HeroAnimationRemaining = 0;
+    TickFury();
     AttackBurst=false; AttackFinisher=false; BurstVisualRemaining=0;
     CelebrationRemaining=0; BellRemaining=0; WardPulse=0; ShakeRemaining=0;
     Impacts.Empty();
@@ -380,6 +395,7 @@ void ADarkRelicEncounter::Restart()
 
 void ADarkRelicEncounter::EndRun(bool Escaped)
 {
+    TickFury();
     RecoilRemaining=0; HealingVoicePending=false;
     PlayHeroVoice(Escaped ? EDarkRelicVoice::Cheer : EDarkRelicVoice::Death);
     AttackRemaining = 0;
@@ -436,12 +452,71 @@ void ADarkRelicEncounter::RelicBurst()
     Notify(TEXT("RELIC BURST"));
 }
 
+void ADarkRelicEncounter::InitializeFury()
+{
+    if (!FuryMaterial || FuryMeshes.Num()>0) return;
+    auto* Sphere=LoadObject<UStaticMesh>(nullptr,TEXT("/Engine/BasicShapes/Sphere.Sphere"));
+    if (!Sphere) return;
+    FuryDynamicMaterial=UMaterialInstanceDynamic::Create(FuryMaterial,this);
+    for (int32 I=0;I<9;++I)
+    {
+        auto* Mesh=NewObject<UStaticMeshComponent>(Player);
+        Mesh->SetStaticMesh(Sphere);
+        Mesh->SetMaterial(0,FuryDynamicMaterial);
+        Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        Mesh->SetCastShadow(false);
+        Mesh->SetVisibility(false);
+        Mesh->RegisterComponent();
+        Mesh->AttachToComponent(Player->GetRootComponent(),FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+        FuryMeshes.Add(Mesh);
+    }
+    FuryLight=NewObject<UPointLightComponent>(Player);
+    FuryLight->SetIntensity(0);
+    FuryLight->SetLightColor(FLinearColor(1.f,0.24f,0.045f));
+    FuryLight->SetAttenuationRadius(320);
+    FuryLight->SetCastShadows(false);
+    FuryLight->RegisterComponent();
+    FuryLight->AttachToComponent(Player->GetRootComponent(),FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+    FuryLight->SetRelativeLocation(FVector(0,0,45));
+}
+
+void ADarkRelicEncounter::TickFury()
+{
+    const auto S=Run->GetSnapshot();
+    const bool Live=S.Phase==EDarkRelicPhase::Running || S.Phase==EDarkRelicPhase::Extracting;
+    FuryIntensity=static_cast<float>(dark_relic::fury_aura(S.RallyRemaining,Run->Tuning.RallyDuration,Live));
+    if (!FuryDynamicMaterial) return;
+    const float Age=FMath::Max(0.f,Run->Tuning.RallyDuration-S.RallyRemaining);
+    const float Breath=ReducedMotion ? 1.f : 0.94f+0.06f*FMath::Sin(Age*5);
+    FuryDynamicMaterial->SetScalarParameterValue(TEXT("Strength"),FuryIntensity*Breath);
+    FuryLight->SetIntensity(850*FuryIntensity*Breath);
+    for (int32 I=0;I<FuryMeshes.Num();++I)
+    {
+        auto* Mesh=FuryMeshes[I].Get();
+        Mesh->SetVisibility(FuryIntensity>0.001f);
+        if (I==0)
+        {
+            Mesh->SetRelativeScale3D(FVector(1.05f,1.05f,2.15f)*(0.98f+0.02f*Breath));
+            Mesh->SetRelativeLocation(FVector(0,0,0));
+        }
+        else
+        {
+            const float Angle=I*2*PI/8+(ReducedMotion ? 0.f : Age*0.7f);
+            const float Rise=ReducedMotion ? I/8.f : FMath::Frac(Age*0.55f+I/8.f);
+            Mesh->SetRelativeLocation(FVector(FMath::Cos(Angle)*52,FMath::Sin(Angle)*52,-72+Rise*165));
+            Mesh->SetRelativeScale3D(FVector(0.06f,0.06f,0.28f+0.12f*FMath::Sin(Rise*PI)));
+        }
+    }
+}
+
 void ADarkRelicEncounter::Rally()
 {
     if (!Run->TryAction(EDarkRelicAction::Rally))
     { Notify(TEXT("Warden fury unavailable: wait for recovery/cooldown; requires 20 stamina.")); return; }
     PlayCue(165,0.7f,0.12f); PlayCue(330,0.5f,0.08f);
     PlayHeroVoice(EDarkRelicVoice::Fury);
+    if (PlayCharacterAction(Player,FuryAnimation,1.1f)) HeroAnimationRemaining=1.1f;
+    if (!ReducedMotion) { ShakeRemaining=0.16f; ShakeStrength=0.38f; }
     Notify(TEXT("WARDEN FURY: stronger attacks, reduced incoming damage"));
 }
 
@@ -497,6 +572,7 @@ void ADarkRelicEncounter::Tick(float Dt)
     if (!Initialized && !InitializePlayer()) return;
     if (!IsValid(Player)) return;
     FeedbackTick(Dt);
+    TickFury();
     MessageRemaining = FMath::Max(0.f, MessageRemaining-Dt);
     HitFlash = FMath::Max(0.f, HitFlash-Dt);
     BurstVisualRemaining=FMath::Max(0.f,BurstVisualRemaining-Dt);
@@ -507,6 +583,18 @@ void ADarkRelicEncounter::Tick(float Dt)
     for (auto& E : Enemies)
         if (IsValid(E.Actor) && E.Health>0 && EnemyVisuals.IsValidIndex(E.Role))
             TickCharacterVisuals(E.Actor,EnemyVisuals[E.Role],E.AnimationRemaining,Dt);
+    if (AuraCapture)
+    {
+        const float Previous=CaptureElapsed;
+        CaptureElapsed+=Dt;
+        if (Previous<1 && CaptureElapsed>=1) Rally();
+        const float Times[]={1.45f,2.5f,6.f,7.4f};
+        const TCHAR* Names[]={TEXT("charge"),TEXT("peak"),TEXT("fade"),TEXT("off")};
+        for (int32 I=0;I<4;++I)
+            if (Previous<Times[I] && CaptureElapsed>=Times[I])
+                FScreenshotRequest::RequestScreenshot(FPaths::ProjectDir()/FString::Printf(TEXT("IntegrationEvidence/aura-%s.png"),Names[I]),true,false);
+        if (CaptureElapsed>9) FPlatformMisc::RequestExit(false);
+    }
     if(Capture)
     {
         float Previous=CaptureElapsed;
@@ -801,6 +889,11 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
     {
         SmokeCheck(TEXT("finisher resolves exactly once"),Enemies[2].Health==400);
         Rally(); SmokeStage=34;
+        if (RequireFuryVisuals)
+        {
+            SmokeCheck(TEXT("Fury plays bound expressive sequence"),Player->GetMesh()->GetSingleNodeInstance()->GetCurrentAsset()==FuryAnimation && HeroAnimationRemaining>1);
+            SmokeCheck(TEXT("Fury creates bounded collision-free aura and light"),FuryMeshes.Num()==9 && FuryDynamicMaterial && FuryLight && FuryMeshes[0]->GetCollisionEnabled()==ECollisionEnabled::NoCollision);
+        }
         if (RequireHeroVoices) SmokeCheck(TEXT("Fury power-up vocalizes"),LastVoice==EDarkRelicVoice::Fury);
         SmokeCheck(TEXT("fury input reaches live component"),Run->GetSnapshot().RallyRemaining>0 && Run->GetSnapshot().RallyCooldown>0);
         SmokeAbilityHealth=Run->GetSnapshot().Health;
@@ -809,6 +902,7 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
     }
     else if (SmokeStage==34 && S.Action==EDarkRelicAction::None)
     {
+        if (RequireFuryVisuals) SmokeCheck(TEXT("Fury aura reaches active intensity from real timer"),FuryIntensity>0.95f && FuryLight->Intensity>0 && FuryMeshes[0]->IsVisible());
         Enemies[1].Health=200; Enemies[1].MaxHealth=200;
         Enemies[1].Actor->TeleportTo(FVector(-600,-200,110),FRotator::ZeroRotator,false,true);
         RelicBurst(); SmokeStage=35;
@@ -830,6 +924,8 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
     }
     else if (SmokeStage==36 && S.RallyRemaining<=0)
     {
+        TickFury();
+        if (RequireFuryVisuals) SmokeCheck(TEXT("Fury expiry extinguishes aura and light"),FuryIntensity==0 && FuryLight->Intensity==0 && !FuryMeshes[0]->IsVisible());
         SmokeAbilityHealth=S.Health; Run->ReceiveDamage(4);
         SmokeCheck(TEXT("fury expiry restores incoming damage"),FMath::IsNearlyEqual(Run->GetSnapshot().Health,SmokeAbilityHealth-4));
         Player->GetCharacterMovement()->StopMovementImmediately();
