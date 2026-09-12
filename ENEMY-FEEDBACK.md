@@ -10,6 +10,8 @@ Only confirmed attack contacts invoke reactions. Blocked and missed strikes do n
 
 ## Build and validation
 
-Based on Fury Aura PR #6. All 155 portable gameplay regression checks pass. Unreal compilation, saved/cooked audio bindings, editor and packaged gameplay, clean exit and protected-release hashes are pending. Human listening and playfeel acceptance remain separate.
+Based on Fury Aura PR #6. All 155 portable gameplay regression checks passed. Delivered September 12, 2026 at 12:44 PM Arizona. Built gameplay source b4d9884; Dark Relic Enemy Feedback desktop shortcut targets H:\DarkRelicEnemyFeedbackPackage\Windows\DarkRelicSmoke.exe. Compilation, bindings, packaging and captures exit 0; all 89 editor and 89 packaged runtime checks pass. Ordinary Escape exit 0, eleven source hashes match, all 42 protected release hashes are unchanged. No game/editor/build remains active. PR #7 stacks on Fury Aura PR #6. Human listening/playfeel acceptance remains pending.
+
+The actual encounter invokes reactions only after confirmed sword or Relic Burst damage. Runtime checks cover spatial audio playback, variant rotation, cooldown, frame-rate-independent travel, wall collision, unsupported ground, boss warning preservation, death and restart cleanup. Specialist routing is shadow-only; no independent review or human listening approval is claimed.
 
 Integration: copy this source into an isolated copy of the verified Fury Aura project; run bind_enemy_feedback.py through Unreal, then run_enemy_feedback_build.ps1. Scripts use the local prepared Windows paths and existing assets; they are not standalone project installers.
