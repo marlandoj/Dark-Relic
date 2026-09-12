@@ -1054,9 +1054,14 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
             SmokeCheck(TEXT("packaged voice component starts real audio playback"),IsValid(HeroVoiceComponent) && HeroVoiceComponent->IsPlaying() && HeroVoiceComponent->Sound);
         }
         const FVector HeroBefore=Player->GetActorLocation();
-        Player->TeleportTo(FVector(-800,-200,110),FRotator::ZeroRotator,false,true);
+        auto* TestFloor=GetWorld()->SpawnActor<AStaticMeshActor>(FVector(0,0,1900),FRotator::ZeroRotator);
+        TestFloor->GetStaticMeshComponent()->SetMobility(EComponentMobility::Movable);
+        TestFloor->GetStaticMeshComponent()->SetStaticMesh(LoadObject<UStaticMesh>(nullptr,TEXT("/Engine/BasicShapes/Cube.Cube")));
+        TestFloor->SetActorScale3D(FVector(20,20,0.2f));
+        TestFloor->GetStaticMeshComponent()->SetCollisionProfileName(TEXT("BlockAll"));
+        Player->TeleportTo(FVector(-800,-200,2010),FRotator::ZeroRotator,false,true);
         auto& Target=Enemies[1];
-        Target.Actor->TeleportTo(FVector(-300,-200,110),FRotator::ZeroRotator,false,true);
+        Target.Actor->TeleportTo(FVector(-300,-200,2010),FRotator::ZeroRotator,false,true);
         const FVector EnemyStart=Target.Actor->GetActorLocation();
         Target.PainCooldown=0;
         ReactEnemyHit(Target,EnemyStart-FVector(100,0,0),false);
@@ -1068,12 +1073,14 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
         SmokeCheck(TEXT("rapid hits throttle pain without suppressing recoil"),Target.VoiceCount==FirstVoiceCount && Target.RecoilRemaining>0);
         TickEnemyFeedback(Target,0.06f); TickEnemyFeedback(Target,0.12f);
         const FVector EnemyDelta=Target.Actor->GetActorLocation()-EnemyStart;
+        UE_LOG(LogTemp,Display,TEXT("DARK_RELIC_RECOIL_MEASURE minion_light=%.3f y=%.3f z=%.3f remaining=%.6f"),EnemyDelta.X,EnemyDelta.Y,EnemyDelta.Z,Target.RecoilRemaining);
         SmokeCheck(TEXT("minion recoil travels 45 cm across split frame times"),FMath::IsNearlyEqual(EnemyDelta.X,45.f,1.f) && FMath::Abs(EnemyDelta.Z)<1 && Target.RecoilRemaining<=0.00001f);
         Target.PainCooldown=0;
         ReactEnemyHit(Target,Target.Actor->GetActorLocation()-FVector(100,0,0),true);
         if (RequireEnemyVoices) SmokeCheck(TEXT("successive pain uses a different recording"),Target.LastPainIndex!=FirstVariant && Target.VoiceCount==FirstVoiceCount+1);
         const FVector HeavyStart=Target.Actor->GetActorLocation();
         TickEnemyFeedback(Target,1.f);
+        UE_LOG(LogTemp,Display,TEXT("DARK_RELIC_RECOIL_MEASURE minion_heavy=%.3f"),Target.Actor->GetActorLocation().X-HeavyStart.X);
         SmokeCheck(TEXT("heavy minion recoil is bounded at 75 cm even on long frame"),FMath::IsNearlyEqual(Target.Actor->GetActorLocation().X-HeavyStart.X,75.f,1.f) && Target.RecoilRemaining==0);
         auto* EnemyWall=GetWorld()->SpawnActor<AStaticMeshActor>(Target.Actor->GetActorLocation()+FVector(55,0,0),FRotator::ZeroRotator);
         EnemyWall->GetStaticMeshComponent()->SetMobility(EComponentMobility::Movable);
@@ -1085,12 +1092,12 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
         const float BlockTravel=Target.Actor->GetActorLocation().X-BlockStart.X;
         SmokeCheck(TEXT("enemy recoil sweep stops before wall penetration"),BlockTravel>=0 && BlockTravel<30 && Target.RecoilRemaining==0);
         EnemyWall->Destroy();
-        Target.Actor->TeleportTo(FVector(-300,-200,1000),FRotator::ZeroRotator,false,true);
+        Target.Actor->TeleportTo(FVector(-300,-200,4000),FRotator::ZeroRotator,false,true);
         const FVector AirStart=Target.Actor->GetActorLocation();
         ReactEnemyHit(Target,AirStart-FVector(100,0,0),false); TickEnemyFeedback(Target,0.18f);
         SmokeCheck(TEXT("enemy recoil rejects unsupported ground"),Target.Actor->GetActorLocation().Equals(AirStart,0.01f) && Target.RecoilRemaining==0);
         auto& Boss=Enemies[2];
-        Boss.Actor->TeleportTo(FVector(-300,100,135),FRotator::ZeroRotator,false,true);
+        Boss.Actor->TeleportTo(FVector(-300,100,2035),FRotator::ZeroRotator,false,true);
         const FVector BossStart=Boss.Actor->GetActorLocation();
         Boss.BellAttack.remaining=0.8; Boss.AreaCenter=BossStart;
         ReactEnemyHit(Boss,BossStart-FVector(100,0,0),true); TickEnemyFeedback(Boss,0.18f);
@@ -1108,6 +1115,7 @@ void ADarkRelicEncounter::SmokeTick(float Dt)
         TickEnemyFeedback(Target,6.f);
         SmokeCheck(TEXT("enemy voice component stops after bounded duration"),Target.VoiceRemaining==0 && (!IsValid(Target.VoiceComponent) || !Target.VoiceComponent->IsPlaying()));
         Player->TeleportTo(HeroBefore,FRotator::ZeroRotator,false,true);
+        TestFloor->Destroy();
         SmokeStage=12;
     }
     else if (SmokeStage == 12)
