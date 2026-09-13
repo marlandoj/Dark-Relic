@@ -6,7 +6,26 @@
 
 *Actual game-view capture from the enhanced Unreal candidate, September 12, 2026.*
 
-[Game & world](#game--world) · [How to play](#how-to-play) · [Install & run](#install--run) · [Repository guide](#repository-guide) · [Build status](#build-status)
+[Hackyard entry](#hackyard-yard-2--backlog) · [Game & world](#game--world) · [How to play](#how-to-play) · [Install & run](#install--run) · [Build status](#build-status)
+
+## Hackyard Yard #2 — Backlog
+
+**One human builder: [Marlandoj](https://github.com/marlandoj). One compact dark-fantasy extraction game, developed with AI assistance.** Dark Relic turns a larger game idea from the backlog into a playable encounter: enter Widowfen, fight for Blackbell, and survive the ward's extraction countdown.
+
+Prepared for [Hackyard Yard #2](https://hackyard.tech/yards/yard-2), September 11–13, 2026. The build window runs from **September 11 at 11:00 AM Arizona to September 13 at 11:00 AM Arizona** (18:00 UTC on each date). This repository is submission material; an accepted Hackyard entry is not yet recorded.
+
+| Start here | What is available |
+| --- | --- |
+| Gameplay | Sword combos, heavy strikes, dodge, healing, Relic Burst, fading Fury aura, three enemy roles, boss area attack and enrage, loot and timed extraction. |
+| Screenshot | The gameplay splash above is a real capture of the enhanced map; it predates the latest HUD polish. |
+| Latest source | `main` includes merged PRs #1–#9 and the reviewer polish; [verification details](REVIEW-POLISH.md). |
+| Playable build | Verified locally on Windows. A public download and hosted gameplay video are not yet available. **Download ZIP gives source, not the game.** |
+| Review without Unreal | Run `bash scripts/test-core.sh`: 169 portable gameplay/presentation checks and a command-line extraction example. |
+| Submission fields | [Short writeup, model disclosure, timing and remaining checklist](SUBMISSION.md). |
+
+**AI and asset disclosure:** development used OpenAI GPT-6 Astra through Codex on Zo Computer, with AI game-specialist advice and Moonshot-model source reviews. Asset preparation used fal.ai and Tripo. Unreal Engine, Paragon characters/animations/voices and premade environment assets are dependencies, not original art made for the event. No model/API key is needed to play the packaged game.
+
+**Build timing:** the earliest recorded source-kit commit is September 11 at **1:49 PM Arizona**, inside the event window. Planning, visual preparation and asset acquisition began earlier; commit timestamps do not prove when every input was created. See [timing and provenance](SUBMISSION.md#timing-and-provenance) for the disclosure boundaries.
 
 ## Game & world
 
@@ -63,7 +82,7 @@ The current evasion uses Greystone's jump-start animation: an evasive hop, not a
 
 ### Warden abilities and hit reactions
 
-The latest **Enemy Feedback** Windows candidate includes every enhancement described here. Minions recoil and grunt when hit; Bellkeeper has smaller recoil and deeper vocals. See [enemy reaction details and validation](ENEMY-FEEDBACK.md).
+The latest **Polish Candidate** includes every enhancement described here. Minions recoil and grunt when hit; Bellkeeper has smaller recoil and deeper vocals. See [enemy reaction details and validation](ENEMY-FEEDBACK.md).
 
 Fury adds an expressive power-up gesture, crimson-and-gold rim glow, rising embers and local lighting. The glow fades with the remaining Fury power. See [transformation behavior and validation](WARDEN-AURA.md).
 
@@ -73,7 +92,7 @@ Chain three light strikes for **Sunder**, unleash a **Relic Burst** with F, or a
 
 ### Final-day enhancement candidate
 
-The demo includes softer Widowfen lighting, warm path lanterns, landed-hit sparks and sound, optional camera shake, procedural swamp ambience and footsteps, and escalating extraction bells and ward effects. The Bellkeeper marks a 360 cm area before striking; leave the ring or time your dodge. Below half health it becomes enraged, with faster movement and a shorter but still visible warning. The latest Windows candidate has passed compilation, packaging and automated gameplay checks. Human end-to-end acceptance remains pending. See [enhancement behavior and validation boundaries](ENHANCEMENTS.md) and the [playtest checklist](PLAYTEST.md).
+The demo includes softer Widowfen lighting, warm path lanterns, landed-hit sparks and sound, optional camera shake, procedural swamp ambience and footsteps, and escalating extraction bells and ward effects. The Bellkeeper marks a 360 cm area before striking; leave the ring or time your dodge. Below half health it becomes enraged, with faster movement and a shorter but still visible warning. The latest Windows candidate has passed compilation, packaging and automated gameplay checks. The operator accepted gameplay and audio in the preceding Enemy Feedback build; a fresh full-run acceptance of the latest polish is not recorded. See [enhancement behavior and validation boundaries](ENHANCEMENTS.md) and the [playtest checklist](PLAYTEST.md).
 
 ### Loot and progression
 
@@ -108,7 +127,7 @@ Do not add `-DarkRelicSmoke` or `-DarkRelicCapture` for normal play: those are a
 
 ### Get the gameplay source
 
-The default **`main` branch contains the gameplay source, Unreal integration scripts, and documentation** from merged PRs #1–#7, including the final-day enhancements, Warden abilities, Fury aura, and player/enemy feedback. The integration source matches the latest verified Enemy Feedback package.
+The default **`main` branch contains the gameplay source, Unreal integration scripts, and documentation** from merged PRs #1–#9, including final-day enhancements, Warden abilities, Fury aura, player/enemy feedback, and the latest warning, ward, environment and audio polish. PR #9 merged as `02d8576`; its gameplay revision `a36a252` matches the verified Polish Candidate. The older prepared Enemy Feedback ZIP does not contain these newest polish changes.
 
 ```bash
 git clone https://github.com/marlandoj/Dark-Relic.git
@@ -128,7 +147,8 @@ The integration was developed with **Unreal Engine 5.8.1**, a Windows C++ build 
 2. Copy `Plugins/DarkRelicCore` from `main` into the project's `Plugins` directory. Back up any existing plugin first.
 3. Enable **Dark Relic Core**, generate project files, and compile the host project's **Development Editor / Win64** target. A Blueprint-only host needs a native C++ target.
 4. Follow [Character integration](https://github.com/marlandoj/Dark-Relic/blob/main/CHARACTER-INTEGRATION.md) for the prepared map, asset bindings, validation, and packaging. The character map is `/Game/WidowfenPrep/LVL_DarkRelicCharacters`.
-5. Validate the scene in the editor, then package for Windows and verify the standalone executable.
+5. For the latest enhanced/polished scene, review the build scripts under `integration/` and [reviewer polish](REVIEW-POLISH.md). These depend on the prepared enhanced map and character/voice bindings; the earlier character guide alone does not reproduce the newest package.
+6. Validate the scene in the editor, then package for Windows and verify the standalone executable.
 
 **The `integration/` scripts contain project-specific Windows paths and require already imported maps and assets. They are not blank-project installers.** Review paths, prerequisites, and existing build receipts before use. The older [Windows integration guide](https://github.com/marlandoj/Dark-Relic/blob/main/WINDOWS-INTEGRATION.md) describes the original component-wiring route; its pending-build statements predate the current character-build verification.
 

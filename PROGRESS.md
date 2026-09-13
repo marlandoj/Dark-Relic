@@ -3,6 +3,15 @@
 status: complete
 watchdog: off
 
+## Hackyard submission documentation (ZOU-1648)
+
+- [x] Verify Yard #2 Backlog, public builder listing and September 13, 2026, 11:00 AM Arizona deadline
+- [x] Refresh README for merged PR #9 and distinguish Polish Candidate from the older ZIP
+- [x] Prepare 446-character submission writeup, model declaration draft and screenshot link
+- [x] Validate relative documentation links and disclose source timing and asset boundaries
+
+This documentation update does not submit the entry. Source-license selection, an unobscured hosted gameplay video, final declaration/provenance review and Fab acquisition records remain in SUBMISSION.md. The operator accepted baseline gameplay/audio; no new latest-candidate human full run is claimed.
+
 ## Reviewer polish implementation (ZOU-1656–ZOU-1659)
 
 User accepted baseline human gameplay/audio and authorized these improvements. The primary chat owns Windows integration. Existing accepted packages and submission ZIP remain protected.
@@ -15,7 +24,7 @@ User accepted baseline human gameplay/audio and authorized these improvements. T
 - [x] Compile, inspect and validate separate Windows polish candidate
 - [x] Publish source review and preserve release evidence
 
-Candidate verification completed September 12, 2026 at 5:14 PM Arizona. Gameplay source a36a252: 169 portable checks, 102 editor checks, 102 packaged checks, sixteen staged captures, normal Escape exit 0, eleven source hashes and fifty protected release hashes pass. Four game-specialist source reviews pass. Desktop shortcut Dark Relic Polish Candidate targets H:\DarkRelicPolishPackage\Windows\DarkRelicSmoke.exe. PR #9 carries the candidate; source merge and broader hackathon submission are separate. The verifier now acquires viewport focus before keyboard input. See REVIEW-POLISH.md; canonical private receipts are in the hackathon evaluations directory. Human baseline gameplay/audio acceptance is recorded; no fresh hardware listening matrix or full performance benchmark is claimed.
+Candidate verification completed September 12, 2026 at 5:14 PM Arizona. Gameplay source a36a252: 169 portable checks, 102 editor checks, 102 packaged checks, sixteen staged captures, normal Escape exit 0, eleven source hashes and fifty protected release hashes pass. Four game-specialist source reviews pass. Desktop shortcut Dark Relic Polish Candidate targets H:\DarkRelicPolishPackage\Windows\DarkRelicSmoke.exe. PR #9 merged as 02d8576 on September 12 at 6:02 PM Arizona; broader hackathon submission remains separate. The verifier now acquires viewport focus before keyboard input. See REVIEW-POLISH.md; canonical private receipts are in the hackathon evaluations directory. Human baseline gameplay/audio acceptance is recorded; no fresh hardware listening matrix or full performance benchmark is claimed.
 
 ## Enemy hit reactions (ZOU-1646)
 
