@@ -38,7 +38,7 @@ try {
         if((Get-PSDrive H).Free -lt 25GB) { throw 'Need 25 GB free' }
         $Release=Get-Content "$Source\IntegrationEvidence\realistic-finalize.json" -Raw | ConvertFrom-Json
         if(!$Release.complete -or !$Release.passed) { throw 'Realistic baseline is not verified' }
-        $Protected=@(Get-Content 'H:\DarkRelicRealisticDelivery-20260913\protected-before.json' -Raw | ConvertFrom-Json)
+        $Protected=Get-Content 'H:\DarkRelicRealisticDelivery-20260913\protected-before.json' -Raw | ConvertFrom-Json
         $Protected+=@(Get-ChildItem 'H:\DarkRelicRealisticPackage' -Recurse -File | Where-Object { $_.Extension -in '.exe','.dll','.pak','.ucas','.utoc' } | ForEach-Object { @{path=$_.FullName;sha256=(Get-FileHash $_.FullName -Algorithm SHA256).Hash} })
         foreach($F in $Protected) { if((Get-FileHash $F.path -Algorithm SHA256).Hash -ne $F.sha256) { throw "Protected baseline differs: $($F.path)" } }
         $Protected | ConvertTo-Json -Depth 5 | Set-Content "$Delivery\protected-before.json"
