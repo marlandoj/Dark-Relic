@@ -1470,8 +1470,9 @@ void ADarkRelicHUD::DrawHUD()
                 { Y=static_cast<float>(Used.Max.Y)+12.f; Moved=true; }
             if (!Moved) break;
         }
+        Y=FMath::Min(Y,Bottom-Height-116.f);
         UsedLabels.Add(FBox2D(FVector2D(X-8,Y-4),FVector2D(X-8+Width,Y-4+Height)));
-        if (FMath::Abs(Y-static_cast<float>(P.Y/Scale))>32.f)
+        if (FMath::Abs(X-(static_cast<float>(P.X/Scale)-65.f))>1.f || FMath::Abs(Y-static_cast<float>(P.Y/Scale))>1.f)
             DrawLine(P.X,P.Y,(X+65)*Scale,(Y-6)*Scale,Text,Scale);
         const bool Hex=Game->HexTellVisible(E);
         if (Hex)
