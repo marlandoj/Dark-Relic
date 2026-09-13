@@ -1,4 +1,4 @@
-param([string]$Delivery='H:\DarkRelicBodyGlowDelivery-20260913',[switch]$Package)
+param([string]$Delivery='H:\DarkRelicBodyGlowDelivery-20260913',[switch]$Package,[switch]$PrepareOnly,[switch]$ResumeRuntime)
 $ErrorActionPreference='Stop'
 $ProgressPreference='SilentlyContinue'
 $Root='H:\DarkRelicBodyGlow-20260913'
@@ -7,7 +7,8 @@ $Output='H:\DarkRelicBodyGlowPackage'
 $Engine='H:\Epic Games\UE_5.8\UE_5.8\Engine'
 $Map='/Game/WidowfenPrep/LVL_DarkRelicRealistic'
 $Evidence="$Root\IntegrationEvidence"
-$Receipt=if($Package){"$Delivery\package-job.json"}else{"$Delivery\build-job.json"}
+if(($Package -and ($PrepareOnly -or $ResumeRuntime)) -or ($PrepareOnly -and $ResumeRuntime)) { throw 'Select only one build mode' }
+$Receipt=if($Package){"$Delivery\package-job.json"}elseif($ResumeRuntime){"$Delivery\runtime-job.json"}else{"$Delivery\build-job.json"}
 if(Test-Path $Receipt) { throw 'Receipt exists; inspect it before retry' }
 $State=@{complete=$false;phase='preflight';pid=$PID;started=[DateTime]::UtcNow.ToString('o');project=$Root}
 function Save-State { $State | ConvertTo-Json -Depth 8 | Set-Content $Receipt }
@@ -26,8 +27,13 @@ function Check-Materials([string]$Log) {
 }
 Save-State
 try {
-    if(Get-Process UnrealEditor,UnrealEditor-Cmd,DarkRelicSmoke,UnrealBuildTool,AutomationTool -ErrorAction SilentlyContinue) { throw 'Existing runtime or build must finish first' }
+    if(Get-Process UnrealEditor,UnrealEditor-Cmd,UnrealBuildTool,AutomationTool -ErrorAction SilentlyContinue) { throw 'Existing editor or build must finish first' }
+    if(!$PrepareOnly -and (Get-Process DarkRelicSmoke -ErrorAction SilentlyContinue)) { throw 'Exit the running game before on-screen verification' }
     if(!$Package) {
+        if($ResumeRuntime) {
+            $Prepared=Get-Content "$Delivery\build-job.json" -Raw | ConvertFrom-Json
+            if(!$Prepared.complete -or $Prepared.phase -ne 'ready-for-runtime') { throw 'Prepared editor build required' }
+        } else {
         if(Test-Path $Root) { throw 'Candidate already exists; preserve it' }
         if((Get-PSDrive H).Free -lt 25GB) { throw 'Need 25 GB free' }
         $Release=Get-Content "$Source\IntegrationEvidence\realistic-finalize.json" -Raw | ConvertFrom-Json
@@ -49,6 +55,8 @@ try {
         Run-Game "$Engine\Binaries\Win64\UnrealEditor-Cmd.exe" @("$Root\DarkRelicSmoke.uproject",'-run=pythonscript',"-script=$Evidence/bind_warden_body_glow.py",'-unattended','-NullRHI',"-abslog=$Evidence\body-glow-bindings.log") 'bindings'
         $Bindings=Get-Content "$Evidence\body-glow-bindings.json" -Raw | ConvertFrom-Json
         if(!$Bindings.complete -or !$Bindings.passed) { throw 'Body glow bindings failed' }
+        }
+        if($PrepareOnly) { $State.phase='ready-for-runtime' } else {
         Run-Game "$Engine\Binaries\Win64\UnrealEditor.exe" @("$Root\DarkRelicSmoke.uproject",$Map,'-game','-DarkRelicSmoke','-unattended','-dx11','-windowed','-ResX=1920','-ResY=1080',"-abslog=$Evidence\body-glow-runtime.log") 'runtime'
         $Runtime=Get-Content "$Evidence\runtime-smoke.json" -Raw | ConvertFrom-Json
         if(!$Runtime.passed -or $Runtime.checks -lt 102) { throw 'Runtime regression checks failed' }
@@ -57,8 +65,10 @@ try {
         Check-Materials "$Evidence\body-glow-capture.log"
         foreach($Name in @('charge','peak','fade','off')) { if(!(Test-Path "$Evidence\aura-$Name.png")) { throw "Missing capture $Name" } }
         $State.phase='ready-for-visual-review'
+        }
     } else {
-        $Prior=Get-Content "$Delivery\build-job.json" -Raw | ConvertFrom-Json
+        $PriorPath=if(Test-Path "$Delivery\runtime-job.json"){"$Delivery\runtime-job.json"}else{"$Delivery\build-job.json"}
+        $Prior=Get-Content $PriorPath -Raw | ConvertFrom-Json
         if(!$Prior.complete -or $Prior.phase -ne 'ready-for-visual-review') { throw 'Editor build must pass first' }
         if(!(Get-Content "$Delivery\visual-review.json" -Raw | ConvertFrom-Json).passed) { throw 'Visual review must pass first' }
         if(Test-Path $Output) { throw 'Package already exists; preserve it' }
