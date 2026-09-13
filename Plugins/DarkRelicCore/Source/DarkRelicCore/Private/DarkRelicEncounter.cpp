@@ -729,7 +729,7 @@ void ADarkRelicEncounter::Tick(float Dt)
         const float Previous=CaptureElapsed;
         CaptureElapsed+=Dt;
         if (Previous<1 && CaptureElapsed>=1) Rally();
-        const float Times[]={1.45f,2.5f,6.f,7.4f};
+        const float Times[]={1.15f,2.5f,6.6f,7.4f};
         const TCHAR* Names[]={TEXT("charge"),TEXT("peak"),TEXT("fade"),TEXT("off")};
         for (int32 I=0;I<4;++I)
             if (Previous<Times[I] && CaptureElapsed>=Times[I])
