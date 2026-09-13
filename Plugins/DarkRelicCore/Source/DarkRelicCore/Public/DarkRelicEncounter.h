@@ -166,7 +166,7 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Fury") TObjectPtr<UMaterialInterface> FuryMaterial;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dark Relic|Fury") bool RequireFuryVisuals = false;
     UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> FuryDynamicMaterial;
-    UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> FuryMeshes;
+    UPROPERTY() TObjectPtr<UMaterialInterface> PreviousFuryOverlay;
     UPROPERTY() TObjectPtr<UPointLightComponent> FuryLight;
     float FuryIntensity = 0;
     bool AuraCapture = false;
