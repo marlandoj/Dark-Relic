@@ -14,4 +14,6 @@ Inspect all four captures and the DX11 material log before writing a passing `vi
 
 ## Current verification
 
-169 portable gameplay/presentation checks pass. Python binding syntax and Git whitespace checks pass. Unreal compilation, editor rendering, packaged gameplay and deployment are pending. This source revision is not a verified Windows release.
+169 portable gameplay/presentation checks pass. Python binding syntax and Git whitespace checks pass. Windows Unreal header generation and all 14 compile/link actions pass. The body-glow material and Fury animation bindings save and reload successfully in the isolated Realistic Widowfen project. The preparation receipt is complete with phase `ready-for-runtime`.
+
+The existing desktop game remains open. Run `-ResumeRuntime` after it closes, then review the rendered captures before packaging. Rendered editor gameplay, packaged gameplay and deployment remain pending. This source revision is not a verified Windows release.
