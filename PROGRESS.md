@@ -3,6 +3,17 @@
 status: complete
 watchdog: off
 
+## Realistic Widowfen environment (ZOU-1666)
+
+- [x] Add deterministic trees, marsh plants, wet earth, rubble and distant ruins
+- [x] Pass 169 portable checks, two geometry tests and PowerShell syntax validation
+- [x] Assemble and reload the isolated Unreal map; verify saved gameplay/collision parity and 102 runtime checks
+- [x] Inspect eight rendered editor frames and preserve their hashes
+- [x] Package the new default map and verify the separate release
+- [x] Push source and integration documentation in draft PR #11; update ZOU-1666
+
+Delivered September 13, 2026 at 8:50 AM Arizona: **Dark Relic Realistic Widowfen** desktop shortcut targets `H:\DarkRelicRealisticPackage\Windows\DarkRelicSmoke.exe`. The separate candidate passes 102 editor and 102 packaged checks, 16 inspected packaged frames, normal Escape exit, 18 source hashes and 57 unchanged protected files. Terminal receipt: `H:\DarkRelicRealistic-20260913\IntegrationEvidence\realistic-finalize.json`. The earlier stale-manifest failure is preserved and resolved by comparison with the committed source; do not rerun completed workers. See [environment workflow](REALISTIC-WIDOWFEN.md). Human visual/playfeel acceptance and the separate submission checklist remain outside this completed implementation.
+
 ## Hackyard submission documentation (ZOU-1648)
 
 - [x] Verify Yard #2 Backlog, public builder listing and September 13, 2026, 11:00 AM Arizona deadline
