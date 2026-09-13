@@ -39,13 +39,27 @@ try {
     }
     if(!$Ready -or $P.HasExited) { throw 'Ordinary game did not become ready' }
     $Shell=New-Object -ComObject WScript.Shell
-    if(!$Shell.AppActivate($P.Id)) { throw 'Could not focus candidate for Fury input' }
+    $Focused=$false
+    for($Attempt=0;$Attempt -lt 20 -and !$P.HasExited;$Attempt++) {
+        $P.Refresh()
+        if($P.MainWindowHandle -ne [IntPtr]::Zero -and $Shell.AppActivate($P.Id)) {$Focused=$true;break}
+        Start-Sleep -Milliseconds 500
+    }
+    if(!$Focused) { throw 'Could not focus candidate for Fury input' }
+    Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class DarkRelicVerifyInput { [StructLayout(LayoutKind.Sequential)] public struct Rect { public int Left,Top,Right,Bottom; } [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h,out Rect r); [DllImport("user32.dll")] public static extern bool SetCursorPos(int x,int y); [DllImport("user32.dll")] public static extern void mouse_event(uint flags,uint dx,uint dy,uint data,UIntPtr extra); [DllImport("user32.dll")] public static extern void keybd_event(byte key,byte scan,uint flags,UIntPtr extra); }'
+    $WindowRect=New-Object DarkRelicVerifyInput+Rect
+    if(![DarkRelicVerifyInput]::GetWindowRect($P.MainWindowHandle,[ref]$WindowRect)){throw 'Cannot locate game viewport'}
+    [DarkRelicVerifyInput]::SetCursorPos(($WindowRect.Left+$WindowRect.Right)/2,($WindowRect.Top+$WindowRect.Bottom)/2) | Out-Null
+    [DarkRelicVerifyInput]::mouse_event(2,0,0,0,[UIntPtr]::Zero)
+    [DarkRelicVerifyInput]::mouse_event(4,0,0,0,[UIntPtr]::Zero)
     Start-Sleep -Milliseconds 400
     $Shell.SendKeys('r')
     Start-Sleep -Seconds 8
     if(!$Shell.AppActivate($P.Id)) { throw 'Could not focus candidate for Escape' }
     Start-Sleep -Milliseconds 300
-    $Shell.SendKeys('{ESC}')
+    [DarkRelicVerifyInput]::keybd_event(27,0,0,[UIntPtr]::Zero)
+    Start-Sleep -Milliseconds 100
+    [DarkRelicVerifyInput]::keybd_event(27,0,2,[UIntPtr]::Zero)
     if(!$P.WaitForExit(20000) -or $P.ExitCode -ne 0) { throw 'Ordinary Escape exit failed; inspect child' }
     $State.ordinaryExit=$P.ExitCode
     $State.phase='verify-hashes'; Save-State

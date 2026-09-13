@@ -153,11 +153,15 @@ The Unreal adapter consumes the portable rules, so core checks exercise the same
 
 Recorded latest-candidate evidence as of **September 12, 2026**:
 
-- **155 portable gameplay checks** passed. The delivered candidate also passed AddressSanitizer/UndefinedBehaviorSanitizer verification.
+- **169 portable gameplay checks** passed for the reviewer-polish candidate.
 - Unreal compilation, character bindings, packaging, and rendered captures completed successfully.
-- **89 editor runtime checks and 89 packaged runtime checks** passed with exit code 0, including Bellkeeper, Warden abilities, Fury, recoil and vocal playback. These are automated checks, not human playthroughs.
+- **102 editor runtime checks and 102 packaged runtime checks** passed with exit code 0, including Bellkeeper, Warden abilities, Fury, recoil, vocal priority, spatial cues and run rewards. These are automated checks, not human playthroughs.
 - A separate normal-play session exited cleanly through Escape.
-- CSV profiling captured frames but returned **777003 during shutdown** with both audio enabled and disabled. The bounded investigation is parked. Human play/feel review and full performance acceptance remain pending.
+- Sixteen staged presentation captures cover eight HUD states at **720p and 1080p**. Four game-specialist source reviews passed; eleven plugin source hashes match, and fifty protected release files remain unchanged.
+- The operator accepted gameplay and audio in the preceding Enemy Feedback build. The newer polish candidate has not undergone a fresh human full-run or headphone/speaker/mono comparison.
+- CSV profiling captured frames but returned **777003 during shutdown** with both audio enabled and disabled. The bounded investigation is parked; full performance acceptance remains pending.
+
+The reviewer-polish candidate is available on the development desktop as **Dark Relic Polish Candidate**, targeting `H:\DarkRelicPolishPackage\Windows\DarkRelicSmoke.exe`. This is a local delivery, not a public binary download. See [reviewer polish and verification](REVIEW-POLISH.md) for its warning, ward, casting, environment and audio changes.
 
 The hero image demonstrates the enhanced map's game view, not final art quality or benchmark performance. See [Character verification notes](CHARACTER-INTEGRATION.md).
 
