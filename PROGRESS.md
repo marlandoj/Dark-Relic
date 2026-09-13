@@ -1,7 +1,21 @@
 # Dark Relic factory source lane
 
-status: in_progress
-watchdog: paused
+status: complete
+watchdog: off
+
+## Reviewer polish implementation (ZOU-1656–ZOU-1659)
+
+User accepted baseline human gameplay/audio and authorized these improvements. The primary chat owns Windows integration. Existing accepted packages and submission ZIP remain protected.
+
+- [x] Implement warning/result HUD, ward prompts and run-credit reconciliation
+- [x] Implement Hexbound tell and success-only impact without changing combat timing
+- [x] Implement audio priority and spatial cues; preserve existing voice assets
+- [x] Add bounded map polish script; no new marketplace assets
+- [x] Pass 169 portable checks
+- [x] Compile, inspect and validate separate Windows polish candidate
+- [x] Publish source review and preserve release evidence
+
+Candidate verification completed September 12, 2026 at 5:14 PM Arizona. Gameplay source a36a252: 169 portable checks, 102 editor checks, 102 packaged checks, sixteen staged captures, normal Escape exit 0, eleven source hashes and fifty protected release hashes pass. Four game-specialist source reviews pass. Desktop shortcut Dark Relic Polish Candidate targets H:\DarkRelicPolishPackage\Windows\DarkRelicSmoke.exe. PR #9 carries the candidate; source merge and broader hackathon submission are separate. The verifier now acquires viewport focus before keyboard input. See REVIEW-POLISH.md; canonical private receipts are in the hackathon evaluations directory. Human baseline gameplay/audio acceptance is recorded; no fresh hardware listening matrix or full performance benchmark is claimed.
 
 ## Enemy hit reactions (ZOU-1646)
 
