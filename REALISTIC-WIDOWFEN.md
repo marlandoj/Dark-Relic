@@ -4,6 +4,10 @@ The environment candidate adds alder trees, reeds, ferns, wet textured earth, ir
 
 The scene contains 650 new decorative actors and 224 deterministic plantings. Decoration has collision disabled. The saved map is compared against the polish baseline for character, animation and voice bindings, Fury assets, player and extraction positions, and retained collision geometry. Combat rules, abilities and input source are unchanged.
 
+![Editor gameplay showing the added Widowfen trees, textured ground and distant belfry during staged combat.](docs/images/dark-relic-realistic-editor.jpg)
+
+Actual rendered editor capture, September 13, 2026. This is staged verification footage from the candidate, not the concept artwork or a human playthrough.
+
 ## Build and review
 
 This remains a prepared-project workflow, not a blank-project installer. It requires the verified Polish project with `/Game/WidowfenPrep/LVL_DarkRelicEnhanced`, the existing Poly Haven source folders and materials, and the existing Paragon character/voice bindings. No additional asset purchase or model API is required.
@@ -19,6 +23,8 @@ Existing destination folders and receipts block accidental reruns. Inspect termi
 
 ## Verification status
 
-Recovered September 13, 2026: 169 portable gameplay checks and two geometry tests pass. The Windows scene saves and reloads; 650 decorative actors, 101 retained colliders and gameplay bindings pass parity. All 102 editor runtime checks pass. Eight DX11 captures exist and the capture log contains no material compilation errors. Visual review, packaging and final release verification are pending.
+Recovered September 13, 2026: 169 portable gameplay checks and two geometry tests pass. The Windows scene saves and reloads; 650 decorative actors, 101 retained colliders and gameplay bindings pass parity. All 102 editor runtime checks pass. Eight DX11 captures were inspected: environment additions, combat warnings, extraction prompts and result states are visible. The capture log contains no material compilation errors. The first neutral editor frame caught transient shader preparation; the packaged starting frame must be checked after cooking.
+
+The package launch request and initial status query timed out. Its execution state is unconfirmed. Read `H:\DarkRelicRealisticDelivery-20260913\package-release-job.json` and the candidate's `realistic-package.json` / `realistic-release.json` before restarting anything. The last verified state is the completed editor candidate. Packaged delivery, ordinary Escape exit, release hashes and the new shortcut remain pending.
 
 Run the portable checks with `bash scripts/test-core.sh` and the geometry checks with `python tests/test_widowfen_geometry.py`. These do not substitute for rendered Unreal validation. Specialist routing for this environment pass is shadow-only, not an independent review or human playthrough.

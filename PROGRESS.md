@@ -8,10 +8,11 @@ watchdog: active
 - [x] Add deterministic trees, marsh plants, wet earth, rubble and distant ruins
 - [x] Pass 169 portable checks, two geometry tests and PowerShell syntax validation
 - [x] Assemble and reload the isolated Unreal map; verify saved gameplay/collision parity and 102 runtime checks
-- [ ] Review rendered frames, package the new default map and verify the separate release
-- [ ] Update repository documentation and delivery tracking
+- [x] Inspect eight rendered editor frames and preserve their hashes
+- [ ] Package the new default map and verify the separate release
+- [x] Push source and integration documentation in draft PR #11; update ZOU-1666
 
-Primary chat owns the user-authorized Windows integration in `H:\DarkRelicRealistic-20260913`. Preserve all accepted releases and the submission ZIP. The recovered build is ready for visual review; no duplicate build is needed. See [environment workflow](REALISTIC-WIDOWFEN.md). Earlier source-only ownership instructions apply to their historical Factory lane.
+Primary chat owns the user-authorized Windows integration in `H:\DarkRelicRealistic-20260913`. Preserve all accepted releases and the submission ZIP. The editor build and visual review pass. The package launch timed out and its effects remain unknown; read `H:\DarkRelicRealisticDelivery-20260913\package-release-job.json` before any retry. See [environment workflow](REALISTIC-WIDOWFEN.md). Earlier source-only ownership instructions apply to their historical Factory lane.
 
 ## Hackyard submission documentation (ZOU-1648)
 
