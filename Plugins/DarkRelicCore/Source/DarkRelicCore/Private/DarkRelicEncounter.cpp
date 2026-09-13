@@ -450,6 +450,13 @@ bool ADarkRelicEncounter::InitializePlayer()
     PC->SetViewTarget(Player);
     PC->SetInputMode(FInputModeGameOnly());
     PC->bShowMouseCursor = false;
+    if (Smoke || AuraCapture || PolishCapture)
+    {
+        PC->SetIgnoreMoveInput(true);
+        PC->SetIgnoreLookInput(true);
+        Player->GetCharacterMovement()->StopMovementImmediately();
+        Player->ConsumeMovementInputVector();
+    }
     Player->GetCharacterMovement()->MaxWalkSpeed = 440;
     Player->GetCharacterMovement()->bOrientRotationToMovement = true;
     Initialized = true;
@@ -920,6 +927,8 @@ void ADarkRelicEncounter::SmokeCheck(const FString& Name, bool Passed)
     ++SmokeChecks;
     SmokeFailed |= !Passed;
     UE_LOG(LogTemp, Display, TEXT("DARK_RELIC_RUNTIME_CHECK %s %s"), Passed ? TEXT("PASS") : TEXT("FAIL"), *Name);
+    if (!Passed && IsValid(Player))
+        UE_LOG(LogTemp,Warning,TEXT("DARK_RELIC_CHECK_STATE stage=%d position=%s rotation=%s velocity=%s"),SmokeStage,*Player->GetActorLocation().ToString(),*Player->GetActorRotation().ToString(),*Player->GetVelocity().ToString());
 }
 
 void ADarkRelicEncounter::FinishSmoke()
