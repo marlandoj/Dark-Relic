@@ -125,6 +125,10 @@ The packaged demo does not require opening Unreal Editor. If Windows reports a m
 
 Do not add `-DarkRelicSmoke` or `-DarkRelicCapture` for normal play: those are automated verification modes that exit on completion. Formal minimum hardware specifications have not yet been established.
 
+### Realistic Widowfen environment
+
+The new scene adds alder trees, marsh plants, wet textured ground, puddles, mossy stone and a ruined belfry beyond the settlement. It preserves the existing combat and character bindings. See [scene integration and verification](REALISTIC-WIDOWFEN.md) for the prepared-project workflow and current candidate status.
+
 ### Get the gameplay source
 
 The default **`main` branch contains the gameplay source, Unreal integration scripts, and documentation** from merged PRs #1–#9, including final-day enhancements, Warden abilities, Fury aura, player/enemy feedback, and the latest warning, ward, environment and audio polish. PR #9 merged as `02d8576`; its gameplay revision `a36a252` matches the verified Polish Candidate. The older prepared Enemy Feedback ZIP does not contain these newest polish changes.

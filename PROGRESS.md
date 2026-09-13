@@ -1,7 +1,17 @@
 # Dark Relic factory source lane
 
-status: complete
-watchdog: off
+status: in_progress
+watchdog: active
+
+## Realistic Widowfen environment (ZOU-1666)
+
+- [x] Add deterministic trees, marsh plants, wet earth, rubble and distant ruins
+- [x] Pass 169 portable checks, two geometry tests and PowerShell syntax validation
+- [x] Assemble and reload the isolated Unreal map; verify saved gameplay/collision parity and 102 runtime checks
+- [ ] Review rendered frames, package the new default map and verify the separate release
+- [ ] Update repository documentation and delivery tracking
+
+Primary chat owns the user-authorized Windows integration in `H:\DarkRelicRealistic-20260913`. Preserve all accepted releases and the submission ZIP. The recovered build is ready for visual review; no duplicate build is needed. See [environment workflow](REALISTIC-WIDOWFEN.md). Earlier source-only ownership instructions apply to their historical Factory lane.
 
 ## Hackyard submission documentation (ZOU-1648)
 
