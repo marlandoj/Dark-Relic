@@ -84,7 +84,7 @@ The current evasion uses Greystone's jump-start animation: an evasive hop, not a
 
 The latest **Polish Candidate** includes every enhancement described here. Minions recoil and grunt when hit; Bellkeeper has smaller recoil and deeper vocals. See [enemy reaction details and validation](ENEMY-FEEDBACK.md).
 
-Fury adds an expressive power-up gesture, crimson-and-gold rim glow, rising embers and local lighting. The glow fades with the remaining Fury power. See [transformation behavior and validation](WARDEN-AURA.md).
+Fury adds an expressive power-up gesture and a crimson-and-gold glow directly on the Warden's animated body, with local lighting. Armor detail remains beneath the glow, which fades with the remaining Fury power. See [body-glow behavior and validation](WARDEN-BODY-GLOW.md).
 
 Warden reacts to landed enemy hits with a short knockback and has Greystone vocal reactions for strikes, dodges, relic powers, Fury, healing and pain. See [hit and voice feedback](WARDEN-FEEDBACK.md).
 
@@ -175,18 +175,18 @@ The Unreal adapter consumes the portable rules, so core checks exercise the same
 
 ## Build status
 
-Recorded latest-candidate evidence as of **September 13, 2026**:
+The latest build is **Dark Relic Warden Body Glow**, delivered **September 13, 2026**:
 
-- **169 portable gameplay checks** and **two geometry tests** pass for the environment candidate.
+- **169 portable gameplay checks** pass. The retained environment previously passed **two geometry tests**.
 - Unreal compilation, character bindings, packaging, and rendered captures completed successfully.
 - **102 editor runtime checks and 102 packaged runtime checks** passed with exit code 0, including Bellkeeper, Warden abilities, Fury, recoil, vocal priority, spatial cues and run rewards. These are automated checks, not human playthroughs.
-- A separate normal-play session exited cleanly through Escape.
-- Sixteen inspected packaged captures cover eight HUD states at **720p and 1080p**, with no material compilation errors or editor shader-preparation overlay. The saved scene contains 650 new decorative actors and preserves 101 baseline colliders and the character/voice bindings.
-- Eighteen source files match the committed code; 57 protected release files, including the earlier submission archive, remain unchanged. The new desktop shortcut is verified.
-- The environment pass uses specialist routing in shadow mode; it has no new independent specialist approval. The operator accepted gameplay and audio in the preceding Enemy Feedback build. This newer environment has not undergone a fresh human full-run or headphone/speaker/mono comparison.
+- Normal keyboard R activates Fury; Escape exits cleanly with code 0.
+- Four inspected packaged captures show body-glow charge, peak, fade and off at **1080p DX11**, without material compilation errors or a shader-preparation overlay. The retained Widowfen environment previously passed sixteen captures at 720p/1080p; its 650 decorative actors and 101 baseline colliders remain part of the copied scene.
+- Fifteen source/integration files match the committed revision; all 85 protected files from earlier releases remain unchanged. The new desktop shortcut is verified.
+- Specialist routing uses shadow mode, with no new independent specialist approval. The operator accepted gameplay and audio in the preceding Enemy Feedback build. The body-glow candidate has not undergone a fresh human full-run or headphone/speaker/mono comparison.
 - CSV profiling captured frames but returned **777003 during shutdown** with both audio enabled and disabled. The bounded investigation is parked; full performance acceptance remains pending.
 
-The new environment package is `H:\DarkRelicRealisticPackage\Windows\DarkRelicSmoke.exe`. The earlier **Dark Relic Polish Candidate** remains at `H:\DarkRelicPolishPackage\Windows\DarkRelicSmoke.exe`. These are local Windows builds, not public binary downloads. See [environment delivery and verification](REALISTIC-WIDOWFEN.md).
+Open **Dark Relic Warden Body Glow** on the desktop, targeting `H:\DarkRelicBodyGlowPackage\Windows\DarkRelicSmoke.exe`. The previous Realistic Widowfen and Polish packages remain available. These are local Windows builds, not public binary downloads. See [body-glow delivery and verification](WARDEN-BODY-GLOW.md) and [environment verification](REALISTIC-WIDOWFEN.md).
 
 The hero image demonstrates the packaged environment. It does not establish photorealistic parity with the concept artwork or benchmark performance. See [Character verification notes](CHARACTER-INTEGRATION.md).
 
