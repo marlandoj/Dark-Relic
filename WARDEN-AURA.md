@@ -1,5 +1,7 @@
 # Warden Fury transformation
 
+Historical September 12 delivery. The current source replaces this surrounding aura and its orbiting embers with [Warden body glow](WARDEN-BODY-GLOW.md). The older package retains the effect described below.
+
 Press **R** during play to activate Warden Fury. A short Greystone challenge gesture accompanies the existing power-up voice. A warm crimson-and-gold rim aura, rising embers and local light build around Warden, remain visible while Fury is active, and fade smoothly during its final two seconds. Fury still lasts six seconds by default.
 
 The flourish lasts up to 1.1 seconds but does not extend the existing 0.35-second action recovery. Attacks and dodges can replace the animation after their normal eligibility checks. Damage, stamina, cooldowns, hit recoil, healing and saves retain their existing rules. **M** disables camera shake and ember orbit/rise while keeping the glow, material shimmer and duration fade visible.
